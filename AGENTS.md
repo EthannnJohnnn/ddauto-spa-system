@@ -43,9 +43,27 @@
 
 - Store employee fixed daily rates and service prices as integer centavos.
 - Permit at most one active graphene/detailing specialist employee.
-- Treat ordinary and specialist labor rules as explicit service data, not name-based guesses.
+- Treat ordinary, specialist, and external-contractor labor rules as explicit service data, not
+  name-based guesses.
 - Keep archived employees, vehicle classes, and services available for historical references.
 - Require an owner-supplied reason when catalog records are archived or restored.
+
+## Service transaction and labor rules
+
+- A vehicle ticket may contain multiple distinct service lines.
+- Snapshot the vehicle class, service, sale amount, labor policy, labor rate, contractor details,
+  assigned workers, and exact worker shares on every transaction.
+- Divide ordinary-service labor only among the regular employees assigned to that service. Preserve
+  exact centavos by allocating any remainder deterministically.
+- Assign specialist-service labor to the single active specialist employee.
+- Record Painting as external work with a manually entered contractor name and labor cost; do not
+  create attendance or employee payroll for the outside painter.
+- When Orlan is present, treat his configured fixed daily rate as a minimum. Add only a top-up when
+  his calculated job labor is below the fixed rate; never add the full fixed rate on top of labor.
+- Assigned regular employees are automatically present. The default meal deduction is 5,000
+  centavos for each present employee and may be adjusted by the owner.
+- Require an owner-supplied reason when a service ticket is voided or restored, and preserve its
+  audit history.
 
 ## Completion standard
 

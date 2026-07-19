@@ -203,9 +203,17 @@ export class CatalogsService {
     const current = this.requireService(serviceId);
     const updated = {
       name: input.name ?? current.name,
-      laborRule: input.laborRule ?? current.labor_rule,
+      laborRule: input.laborRule ?? current.labor_policy,
+      laborRateBasisPoints: input.laborRateBasisPoints ?? current.labor_rate_basis_points,
       sortOrder: input.sortOrder ?? current.sort_order,
     };
+    if (updated.laborRule === 'EXTERNAL' && updated.laborRateBasisPoints !== 0) {
+      throw new AppError(
+        400,
+        'EXTERNAL_LABOR_RATE_INVALID',
+        'External contractor services use a manually entered labor cost.',
+      );
+    }
     this.assertServiceNameAvailable(updated.name, serviceId);
     const now = this.now();
 
@@ -355,7 +363,8 @@ function mapService(row) {
   return {
     id: row.id,
     name: row.name,
-    laborRule: row.labor_rule,
+    laborRule: row.labor_policy,
+    laborRateBasisPoints: row.labor_rate_basis_points,
     sortOrder: row.sort_order,
     isActive: Boolean(row.is_active),
   };

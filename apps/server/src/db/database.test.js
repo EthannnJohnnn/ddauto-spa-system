@@ -22,17 +22,25 @@ describe('database foundation', () => {
 
     expect(tables).toEqual([
       'audit_events',
+      'daily_attendance',
       'employees',
       'recovery_codes',
       'schema_migrations',
       'service_prices',
+      'service_ticket_item_workers',
+      'service_ticket_items',
+      'service_tickets',
       'services',
       'sessions',
       'users',
       'vehicle_classes',
     ]);
-    expect(database.prepare('SELECT COUNT(*) AS count FROM schema_migrations').get().count).toBe(2);
+    expect(database.prepare('SELECT COUNT(*) AS count FROM schema_migrations').get().count).toBe(3);
     expect(database.prepare('SELECT COUNT(*) AS count FROM services').get().count).toBe(5);
+    expect(
+      database.prepare("SELECT labor_policy FROM services WHERE name = 'Painting'").get()
+        .labor_policy,
+    ).toBe('EXTERNAL');
     expect(database.pragma('foreign_keys', { simple: true })).toBe(1);
 
     database.close();

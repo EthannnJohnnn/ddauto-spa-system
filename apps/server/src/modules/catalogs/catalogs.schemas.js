@@ -2,6 +2,7 @@ import { z } from 'zod';
 
 const moneyCentavos = z.number().int().min(0).max(100_000_000);
 const sortOrder = z.number().int().min(0).max(10_000).default(0);
+const laborRateBasisPoints = z.number().int().min(0).max(10_000);
 
 export const idParamsSchema = z
   .object({
@@ -33,16 +34,20 @@ export const updateVehicleClassSchema = createVehicleClassSchema
   .partial()
   .refine((value) => Object.keys(value).length > 0, 'Provide at least one field to update.');
 
-export const createServiceSchema = z
+const serviceSchema = z
   .object({
     name: z.string().trim().min(2).max(80),
-    laborRule: z.enum(['ORDINARY', 'SPECIALIST']),
+    laborRule: z.enum(['ORDINARY', 'SPECIALIST', 'EXTERNAL']),
+    laborRateBasisPoints,
     sortOrder,
   })
   .strict();
 
-export const updateServiceSchema = createServiceSchema
+export const createServiceSchema = serviceSchema.superRefine(validateServiceLaborPolicy);
+
+export const updateServiceSchema = serviceSchema
   .partial()
+  .superRefine(validateServiceLaborPolicy)
   .refine((value) => Object.keys(value).length > 0, 'Provide at least one field to update.');
 
 export const archiveSchema = z
@@ -58,3 +63,13 @@ export const setServicePriceSchema = z
     amountCentavos: moneyCentavos,
   })
   .strict();
+
+function validateServiceLaborPolicy(value, context) {
+  if (value.laborRule === 'EXTERNAL' && value.laborRateBasisPoints !== 0) {
+    context.addIssue({
+      code: 'custom',
+      path: ['laborRateBasisPoints'],
+      message: 'External contractor services use a manually entered labor cost.',
+    });
+  }
+}

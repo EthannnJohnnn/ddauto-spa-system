@@ -5,9 +5,10 @@ spreadsheet workflow for service sales, tire inventory, canteen inventory, purch
 expenses, attendance, payroll, daily closing, and reports.
 
 The current foundation includes the local database, first-time owner setup, username/password
-login, protected SPA shell, session security, one-time password recovery, audit events, and the
-owner-managed business catalogs for employees, vehicle classes, services, and service prices.
-Business transactions and real business data are intentionally not included yet.
+login, protected SPA shell, session security, one-time password recovery, audit events, the
+owner-managed business catalogs, and daily service transactions with attendance and payroll
+previews. Tire, canteen, purchase, expense, final payroll, closing, and combined-report workflows
+will be added in later phases. Real business data is intentionally not included in the repository.
 
 ## Technology
 
@@ -103,13 +104,34 @@ The owner can complete the reusable setup under **Settings** before recording tr
 - Employees, including a fixed full-day rate, labor-share eligibility, and the single active
   graphene/detailing specialist
 - Vehicle classes used as columns in the service-price matrix
-- Services and their ordinary or specialist labor rule
+- Services and their ordinary, specialist, or external-contractor labor rule
 - Service prices for each active service and vehicle-class combination
 
 Carwash, Graphene/Ceramic, Painting, Detailing, and Vulcanizing/Tire Change are seeded as
 editable services. Prices and employee rates are stored as integer centavos. Catalog records
 are archived and restored instead of being hard-deleted, and every owner mutation requires a
 valid session and CSRF token and creates an audit event.
+
+## Service sales and daily labor
+
+The **Service sales** page records one vehicle ticket with one or more service lines. It shows the
+selected day's service-sales total, active transaction count, employee payroll preview, attendance,
+meal deductions, and an individual transaction list. Tickets can be edited, voided, and restored by
+the owner, with an audit reason preserved for void and restore actions.
+
+- Ordinary services allocate the service's configured labor percentage among only the employees
+  assigned to that service. Exact-cent remainders are allocated deterministically.
+- Graphene/Ceramic and Detailing use the specialist percentage and are assigned to the active
+  specialist employee.
+- Orlan's fixed daily amount is a minimum when present: the system adds only the difference needed
+  to reach his configured daily rate when his job labor is lower.
+- Painting is an external-contractor service. The owner's manually entered painter name and labor
+  cost are recorded separately and do not make the painter a regular employee.
+- Assigned regular employees become present automatically. Each present employee defaults to a
+  configurable meal cost currently set to ₱50 for the day.
+
+Transaction rows snapshot the names, prices, labor policy, percentage, contractor cost, and worker
+shares used at the time of sale so later catalog changes do not rewrite historical calculations.
 
 ## Public-repository safety
 

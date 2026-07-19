@@ -4,6 +4,7 @@ export function ServicesPanel({ services, onSave, onStatus }) {
   const [editing, setEditing] = useState(null);
   const [name, setName] = useState('');
   const [laborRule, setLaborRule] = useState('ORDINARY');
+  const [laborRatePercent, setLaborRatePercent] = useState('40');
   const [sortOrder, setSortOrder] = useState('0');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -11,6 +12,7 @@ export function ServicesPanel({ services, onSave, onStatus }) {
   useEffect(() => {
     setName(editing?.name ?? '');
     setLaborRule(editing?.laborRule ?? 'ORDINARY');
+    setLaborRatePercent(String((editing?.laborRateBasisPoints ?? 4000) / 100));
     setSortOrder(String(editing?.sortOrder ?? 0));
   }, [editing]);
 
@@ -19,10 +21,17 @@ export function ServicesPanel({ services, onSave, onStatus }) {
     setBusy(true);
     setError('');
     try {
-      await onSave(editing?.id, { name, laborRule, sortOrder: Number(sortOrder) });
+      await onSave(editing?.id, {
+        name,
+        laborRule,
+        laborRateBasisPoints:
+          laborRule === 'EXTERNAL' ? 0 : Math.round(Number(laborRatePercent) * 100),
+        sortOrder: Number(sortOrder),
+      });
       setEditing(null);
       setName('');
       setLaborRule('ORDINARY');
+      setLaborRatePercent('40');
       setSortOrder('0');
     } catch (submissionError) {
       setError(submissionError.message);
@@ -60,8 +69,31 @@ export function ServicesPanel({ services, onSave, onStatus }) {
           >
             <option value="ORDINARY">Ordinary service labor pool</option>
             <option value="SPECIALIST">Graphene/detailing specialist only</option>
+            <option value="EXTERNAL">External contractor (manual labor cost)</option>
           </select>
         </label>
+        {laborRule !== 'EXTERNAL' && (
+          <label className="mt-4 block">
+            <span className="mb-2 block text-sm font-semibold text-slate-700">
+              Labor percentage
+            </span>
+            <div className="flex rounded-xl border border-slate-300 focus-within:border-teal-600">
+              <input
+                className="min-w-0 flex-1 rounded-l-xl px-4 py-3 outline-none"
+                max="100"
+                min="0"
+                onChange={(event) => setLaborRatePercent(event.target.value)}
+                required
+                step="0.01"
+                type="number"
+                value={laborRatePercent}
+              />
+              <span className="grid place-items-center border-l border-slate-300 px-4 text-slate-500">
+                %
+              </span>
+            </div>
+          </label>
+        )}
         <label className="mt-4 block">
           <span className="mb-2 block text-sm font-semibold text-slate-700">Display order</span>
           <input
@@ -113,7 +145,7 @@ export function ServicesPanel({ services, onSave, onStatus }) {
                   <span
                     className={`rounded-full px-2.5 py-1 text-xs font-semibold ${service.laborRule === 'SPECIALIST' ? 'bg-amber-100 text-amber-800' : 'bg-teal-100 text-teal-800'}`}
                   >
-                    {service.laborRule === 'SPECIALIST' ? 'Specialist only' : 'Ordinary labor'}
+                    {laborPolicyLabel(service)}
                   </span>
                   {!service.isActive && (
                     <span className="rounded-full bg-slate-200 px-2.5 py-1 text-xs font-semibold text-slate-700">
@@ -145,4 +177,13 @@ export function ServicesPanel({ services, onSave, onStatus }) {
       </section>
     </div>
   );
+}
+
+function laborPolicyLabel(service) {
+  if (service.laborRule === 'EXTERNAL') {
+    return 'External contractor';
+  }
+
+  const label = service.laborRule === 'SPECIALIST' ? 'Specialist only' : 'Ordinary labor';
+  return `${label} · ${service.laborRateBasisPoints / 100}%`;
 }

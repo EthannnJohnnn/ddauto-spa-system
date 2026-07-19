@@ -8,6 +8,10 @@ export function validateParams(schema) {
   return validateSource(schema, 'params', 'validatedParams');
 }
 
+export function validateQuery(schema) {
+  return validateSource(schema, 'query', 'validatedQuery');
+}
+
 function validateSource(schema, source, destination) {
   return (request, response, next) => {
     const result = schema.safeParse(request[source]);
