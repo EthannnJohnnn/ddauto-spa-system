@@ -1,3 +1,5 @@
+import { AppError } from '../errors/app-error.js';
+
 export function notFoundHandler(request, response) {
   response.status(404).json({
     error: {
@@ -10,6 +12,17 @@ export function notFoundHandler(request, response) {
 export function errorHandler(error, request, response, next) {
   if (response.headersSent) {
     next(error);
+    return;
+  }
+
+  if (error instanceof AppError) {
+    response.status(error.status).json({
+      error: {
+        code: error.code,
+        message: error.message,
+        ...(error.details ? { details: error.details } : {}),
+      },
+    });
     return;
   }
 

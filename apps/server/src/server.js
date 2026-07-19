@@ -1,8 +1,10 @@
 import { createApp } from './app.js';
 import { getRuntimeConfig } from './config/env.js';
+import { openDatabase } from './db/database.js';
 
 const config = getRuntimeConfig();
-const app = createApp();
+const database = openDatabase();
+const app = createApp({ database, runtimeConfig: config });
 
 const server = app.listen(config.port, config.host, () => {
   console.log(`DD Auto Spa is running at http://${config.host}:${config.port}`);
@@ -11,6 +13,8 @@ const server = app.listen(config.port, config.host, () => {
 function shutdown(signal) {
   console.log(`${signal} received. Closing the server...`);
   server.close((error) => {
+    database.close();
+
     if (error) {
       console.error(error);
       process.exitCode = 1;
