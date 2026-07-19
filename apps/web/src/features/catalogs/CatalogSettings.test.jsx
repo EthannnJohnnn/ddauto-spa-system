@@ -6,11 +6,19 @@ const baseCatalogs = {
   employees: [],
   vehicleClasses: [],
   services: [
-    { id: 1, name: 'Carwash', laborRule: 'ORDINARY', sortOrder: 10, isActive: true },
+    {
+      id: 1,
+      name: 'Carwash',
+      laborRule: 'ORDINARY',
+      laborRateBasisPoints: 4000,
+      sortOrder: 10,
+      isActive: true,
+    },
     {
       id: 2,
       name: 'Graphene/Ceramic',
       laborRule: 'SPECIALIST',
+      laborRateBasisPoints: 3000,
       sortOrder: 20,
       isActive: true,
     },
@@ -39,9 +47,9 @@ describe('CatalogSettings', () => {
     fireEvent.click(screen.getByRole('tab', { name: 'Services' }));
 
     expect(screen.getByRole('heading', { name: 'Carwash' })).toBeTruthy();
-    expect(screen.getByText('Ordinary labor')).toBeTruthy();
+    expect(screen.getByText('Ordinary labor · 40%')).toBeTruthy();
     expect(screen.getByRole('heading', { name: 'Graphene/Ceramic' })).toBeTruthy();
-    expect(screen.getByText('Specialist only')).toBeTruthy();
+    expect(screen.getByText('Specialist only · 30%')).toBeTruthy();
   });
 
   it('converts the owner-entered fixed daily peso rate to integer centavos', async () => {

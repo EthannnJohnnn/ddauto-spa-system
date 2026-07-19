@@ -14,6 +14,9 @@ import { createAuthModule } from './modules/auth/auth.routes.js';
 import { CatalogsRepository } from './modules/catalogs/catalogs.repository.js';
 import { CatalogsService } from './modules/catalogs/catalogs.service.js';
 import { createCatalogsRouter } from './modules/catalogs/catalogs.routes.js';
+import { ServiceSalesRepository } from './modules/service-sales/service-sales.repository.js';
+import { ServiceSalesService } from './modules/service-sales/service-sales.service.js';
+import { createServiceSalesRouter } from './modules/service-sales/service-sales.routes.js';
 
 const currentDirectory = path.dirname(fileURLToPath(import.meta.url));
 const webDistDirectory = path.resolve(currentDirectory, '../../web/dist');
@@ -34,6 +37,9 @@ export function createApp({ database, runtimeConfig = getRuntimeConfig() }) {
   const catalogsRepository = new CatalogsRepository(database);
   const catalogsService = new CatalogsService(catalogsRepository, auditRepository);
   const catalogsRouter = createCatalogsRouter(catalogsService, authModule.middleware);
+  const serviceSalesRepository = new ServiceSalesRepository(database);
+  const serviceSalesService = new ServiceSalesService(serviceSalesRepository, auditRepository);
+  const serviceSalesRouter = createServiceSalesRouter(serviceSalesService, authModule.middleware);
 
   app.disable('x-powered-by');
   app.use(
@@ -52,6 +58,7 @@ export function createApp({ database, runtimeConfig = getRuntimeConfig() }) {
   app.use('/api/v1/health', healthRouter);
   app.use('/api/v1/auth', authModule.router);
   app.use('/api/v1/catalogs', catalogsRouter);
+  app.use('/api/v1/service-sales', serviceSalesRouter);
 
   if (existsSync(webDistDirectory)) {
     app.use(express.static(webDistDirectory));

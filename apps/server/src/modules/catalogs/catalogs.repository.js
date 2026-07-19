@@ -131,7 +131,8 @@ export class CatalogsRepository {
   listServices() {
     return this.database
       .prepare(
-        `SELECT id, name, labor_rule, sort_order, is_active, created_at, updated_at
+        `SELECT id, name, labor_rule, labor_policy, labor_rate_basis_points,
+                sort_order, is_active, created_at, updated_at
          FROM services
          ORDER BY is_active DESC, sort_order, name COLLATE NOCASE, id`,
       )
@@ -148,25 +149,36 @@ export class CatalogsRepository {
       .get(name, excludeId);
   }
 
-  createService({ name, laborRule, sortOrder, now }) {
+  createService({ name, laborRule, laborRateBasisPoints, sortOrder, now }) {
     const result = this.database
       .prepare(
-        `INSERT INTO services (name, labor_rule, sort_order, created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?)`,
+        `INSERT INTO services (
+          name, labor_rule, labor_policy, labor_rate_basis_points,
+          sort_order, created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
       )
-      .run(name, laborRule, sortOrder, now, now);
+      .run(name, legacyLaborRule(laborRule), laborRule, laborRateBasisPoints, sortOrder, now, now);
 
     return Number(result.lastInsertRowid);
   }
 
-  updateService(serviceId, { name, laborRule, sortOrder }, now) {
+  updateService(serviceId, { name, laborRule, laborRateBasisPoints, sortOrder }, now) {
     this.database
       .prepare(
         `UPDATE services
-         SET name = ?, labor_rule = ?, sort_order = ?, updated_at = ?
+         SET name = ?, labor_rule = ?, labor_policy = ?, labor_rate_basis_points = ?,
+             sort_order = ?, updated_at = ?
          WHERE id = ?`,
       )
-      .run(name, laborRule, sortOrder, now, serviceId);
+      .run(
+        name,
+        legacyLaborRule(laborRule),
+        laborRule,
+        laborRateBasisPoints,
+        sortOrder,
+        now,
+        serviceId,
+      );
   }
 
   setServiceActive(serviceId, isActive, now) {
@@ -206,4 +218,8 @@ export class CatalogsRepository {
       )
       .run(serviceId, vehicleClassId, amountCentavos, now, now);
   }
+}
+
+function legacyLaborRule(laborRule) {
+  return laborRule === 'SPECIALIST' ? 'SPECIALIST' : 'ORDINARY';
 }
