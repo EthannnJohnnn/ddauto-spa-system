@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { BrandMark } from '../../components/BrandMark.jsx';
+import { CatalogSettings } from '../catalogs/CatalogSettings.jsx';
 
 const modules = [
   'Dashboard',
@@ -20,7 +21,7 @@ const summaryCards = [
   { label: "Today's total", value: '₱0.00', note: 'Combined sales' },
 ];
 
-export function DashboardShell({ user, onLogout }) {
+export function DashboardShell({ user, csrfToken, onLogout }) {
   const [activeModule, setActiveModule] = useState('Dashboard');
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -105,6 +106,8 @@ export function DashboardShell({ user, onLogout }) {
         <main className="p-5 sm:p-8">
           {activeModule === 'Dashboard' ? (
             <DashboardHome user={user} />
+          ) : activeModule === 'Settings' ? (
+            <CatalogSettings csrfToken={csrfToken} />
           ) : (
             <ModulePlaceholder module={activeModule} />
           )}
