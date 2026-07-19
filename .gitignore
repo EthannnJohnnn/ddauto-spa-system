@@ -1,0 +1,37 @@
+# Dependencies and build output
+node_modules/
+dist/
+coverage/
+.vite/
+
+# Environment files and secrets
+.env
+.env.*
+!.env.example
+
+# Local business data (never commit to the public repository)
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+*.xlsx
+*.xls
+data/
+backups/
+logs/
+business-data/
+
+# Operating system and editor files
+.DS_Store
+Thumbs.db
+Desktop.ini
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+
+# Temporary files
+*.log
+*.tmp
+*.temp
