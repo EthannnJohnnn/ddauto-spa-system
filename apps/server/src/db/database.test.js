@@ -1,3 +1,4 @@
+import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { openDatabase } from './database.js';
 import { migrateDatabase } from './migrate.js';
@@ -33,13 +34,14 @@ describe('database foundation', () => {
   });
 
   it('keeps the default database outside the source tree and supports an explicit override', () => {
-    expect(
-      getDataDirectory({
-        LOCALAPPDATA: 'C:\\Users\\Owner\\AppData\\Local',
-      }),
-    ).toContain('DD Auto Spa');
-    expect(getDatabasePath({ DDAUTO_DATA_DIR: 'D:\\safe-data' })).toBe(
-      'D:\\safe-data\\ddauto-spa.db',
+    const localAppData = path.resolve('local-app-data');
+    const overrideDirectory = path.resolve('safe-data');
+
+    expect(getDataDirectory({ LOCALAPPDATA: localAppData })).toBe(
+      path.join(localAppData, 'DD Auto Spa', 'data'),
+    );
+    expect(getDatabasePath({ DDAUTO_DATA_DIR: overrideDirectory })).toBe(
+      path.join(overrideDirectory, 'ddauto-spa.db'),
     );
   });
 });
