@@ -102,7 +102,7 @@ export function App() {
 
   return (
     <>
-      <DashboardShell user={auth.user} onLogout={handleLogout} />
+      <DashboardShell csrfToken={auth.csrfToken} user={auth.user} onLogout={handleLogout} />
       {recoveryCode && (
         <RecoveryCodeDialog code={recoveryCode} onContinue={() => setRecoveryCode('')} />
       )}

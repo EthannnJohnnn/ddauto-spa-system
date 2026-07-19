@@ -5,7 +5,8 @@ spreadsheet workflow for service sales, tire inventory, canteen inventory, purch
 expenses, attendance, payroll, daily closing, and reports.
 
 The current foundation includes the local database, first-time owner setup, username/password
-login, protected SPA shell, session security, one-time password recovery, and audit events.
+login, protected SPA shell, session security, one-time password recovery, audit events, and the
+owner-managed business catalogs for employees, vehicle classes, services, and service prices.
 Business transactions and real business data are intentionally not included yet.
 
 ## Technology
@@ -94,6 +95,21 @@ without forcing every small feature into unnecessary files.
 - State-changing authenticated requests require a separate CSRF token.
 - Repeated authentication failures are rate-limited.
 - Setup, login, logout, and password-reset activity is recorded in the audit log.
+
+## Business setup catalogs
+
+The owner can complete the reusable setup under **Settings** before recording transactions:
+
+- Employees, including a fixed full-day rate, labor-share eligibility, and the single active
+  graphene/detailing specialist
+- Vehicle classes used as columns in the service-price matrix
+- Services and their ordinary or specialist labor rule
+- Service prices for each active service and vehicle-class combination
+
+Carwash, Graphene/Ceramic, Painting, Detailing, and Vulcanizing/Tire Change are seeded as
+editable services. Prices and employee rates are stored as integer centavos. Catalog records
+are archived and restored instead of being hard-deleted, and every owner mutation requires a
+valid session and CSRF token and creates an audit event.
 
 ## Public-repository safety
 

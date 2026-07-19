@@ -6,6 +6,11 @@ const migrations = [
     name: 'auth foundation',
     sql: readFileSync(new URL('./migrations/001_auth_foundation.sql', import.meta.url), 'utf8'),
   },
+  {
+    version: 2,
+    name: 'business catalogs',
+    sql: readFileSync(new URL('./migrations/002_business_catalogs.sql', import.meta.url), 'utf8'),
+  },
 ];
 
 export function migrateDatabase(database) {

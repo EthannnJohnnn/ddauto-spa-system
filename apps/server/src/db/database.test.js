@@ -22,12 +22,17 @@ describe('database foundation', () => {
 
     expect(tables).toEqual([
       'audit_events',
+      'employees',
       'recovery_codes',
       'schema_migrations',
+      'service_prices',
+      'services',
       'sessions',
       'users',
+      'vehicle_classes',
     ]);
-    expect(database.prepare('SELECT COUNT(*) AS count FROM schema_migrations').get().count).toBe(1);
+    expect(database.prepare('SELECT COUNT(*) AS count FROM schema_migrations').get().count).toBe(2);
+    expect(database.prepare('SELECT COUNT(*) AS count FROM services').get().count).toBe(5);
     expect(database.pragma('foreign_keys', { simple: true })).toBe(1);
 
     database.close();

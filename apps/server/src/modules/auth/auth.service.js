@@ -1,4 +1,5 @@
 import { AppError } from '../../errors/app-error.js';
+import { AuditRepository } from '../audit/audit.repository.js';
 import {
   generateCsrfToken,
   generateRecoveryCode,
@@ -15,9 +16,10 @@ const INVALID_CREDENTIALS = 'The username or password is incorrect.';
 const INVALID_RECOVERY = 'The username or recovery code is incorrect.';
 
 export class AuthService {
-  constructor(repository, { clock = () => new Date() } = {}) {
+  constructor(repository, { clock = () => new Date(), auditRepository } = {}) {
     this.repository = repository;
     this.clock = clock;
+    this.auditRepository = auditRepository ?? new AuditRepository(repository.database);
   }
 
   needsSetup() {
@@ -52,7 +54,7 @@ export class AuthService {
         hashOpaqueValue(normalizeRecoveryCode(recoveryCode)),
         now,
       );
-      this.repository.recordAudit({
+      this.auditRepository.record({
         actorUserId: userId,
         action: 'OWNER_SETUP_COMPLETED',
         entityType: 'USER',
@@ -75,7 +77,7 @@ export class AuthService {
       : await verifyAgainstDummyPassword(password);
 
     if (!user || !passwordMatches || user.is_active !== 1) {
-      this.repository.recordAudit({
+      this.auditRepository.record({
         action: 'LOGIN_FAILED',
         entityType: 'SESSION',
         metadata: { username },
@@ -85,7 +87,7 @@ export class AuthService {
     }
 
     const session = this.createSession(user.id);
-    this.repository.recordAudit({
+    this.auditRepository.record({
       actorUserId: user.id,
       action: 'LOGIN_SUCCEEDED',
       entityType: 'SESSION',
@@ -136,7 +138,7 @@ export class AuthService {
       this.repository.deleteSession(hashOpaqueValue(sessionToken));
     }
 
-    this.repository.recordAudit({
+    this.auditRepository.record({
       actorUserId,
       action: 'LOGOUT',
       entityType: 'SESSION',
@@ -175,7 +177,7 @@ export class AuthService {
         hashOpaqueValue(normalizeRecoveryCode(nextRecoveryCode)),
         now,
       );
-      this.repository.recordAudit({
+      this.auditRepository.record({
         actorUserId: user.id,
         action: 'PASSWORD_RESET',
         entityType: 'USER',

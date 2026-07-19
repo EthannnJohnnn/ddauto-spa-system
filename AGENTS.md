@@ -39,6 +39,14 @@
 - Prefer small, reviewable commits and short-lived feature branches.
 - Update documentation when commands, architecture, or business rules change.
 
+## Catalog rules
+
+- Store employee fixed daily rates and service prices as integer centavos.
+- Permit at most one active graphene/detailing specialist employee.
+- Treat ordinary and specialist labor rules as explicit service data, not name-based guesses.
+- Keep archived employees, vehicle classes, and services available for historical references.
+- Require an owner-supplied reason when catalog records are archived or restored.
+
 ## Completion standard
 
 Before calling work complete, run `npm run check`, inspect `git diff`, and confirm no sensitive
