@@ -9,9 +9,32 @@
     BlinkMacSystemFont,
     'Segoe UI',
     sans-serif;
-  color-scheme: dark;
+  color-scheme: light;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
+}
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+
+  .recovery-code-print,
+  .recovery-code-print * {
+    visibility: visible;
+  }
+
+  .recovery-code-print {
+    position: fixed;
+    inset: 2cm;
+    display: grid;
+    place-content: center;
+    border: 2px solid #0f172a;
+  }
+
+  .print-hide {
+    display: none !important;
+  }
 }
 
 body {

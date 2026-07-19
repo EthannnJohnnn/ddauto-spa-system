@@ -13,6 +13,7 @@
 
 - `apps/web`: React and Tailwind user interface, organized by business feature.
 - `apps/server`: Express API. Put feature code under `src/modules/<feature>`.
+- `apps/server/src/db/migrations`: ordered, immutable SQLite schema migrations.
 - `packages/contracts`: framework-neutral shared constants and validation contracts.
 - Tests live beside the code they verify and use the `.test.js` or `.test.jsx` suffix.
 
@@ -29,6 +30,8 @@
 
 - Keep route handlers thin; business calculations belong in services.
 - Database access belongs in repositories and must use transactions for multi-step changes.
+- Open SQLite through `src/db/database.js`; keep the default database in Windows Local AppData.
+- Protect owner mutations with authentication, owner-role, and CSRF middleware.
 - Validate all data at the API boundary; never trust browser input.
 - Snapshot transaction-critical names, prices, cost, and rule values for historical accuracy.
 - Use effective-dated settings for payroll and pricing rules that change over time.

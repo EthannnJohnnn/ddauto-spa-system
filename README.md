@@ -4,15 +4,16 @@ An offline-first local management system for DD Auto Spa. It will replace the ow
 spreadsheet workflow for service sales, tire inventory, canteen inventory, purchases,
 expenses, attendance, payroll, daily closing, and reports.
 
-Phase 1 contains the development foundation only. Business features and real business data
-are intentionally not included yet.
+The current foundation includes the local database, first-time owner setup, username/password
+login, protected SPA shell, session security, one-time password recovery, and audit events.
+Business transactions and real business data are intentionally not included yet.
 
 ## Technology
 
 - React and Vite for the browser interface
 - Tailwind CSS for styling
 - Node.js and Express for the local API
-- SQLite (introduced in Phase 2) for local storage
+- SQLite for local storage
 - Vitest for automated tests
 - ESLint and Prettier for code quality
 
@@ -51,13 +52,28 @@ npm start
 
 The production application is then available at `http://127.0.0.1:3000`.
 
+## First-time setup and local data
+
+The first launch displays a one-time owner-account setup screen. The password must contain at
+least 12 characters, including uppercase, lowercase, and a number. Setup generates a printable
+one-time recovery code. The code is stored only as a hash and must be kept somewhere private.
+
+By default, Windows business data is stored outside the source-code folder:
+
+```text
+%LOCALAPPDATA%\DD Auto Spa\data\ddauto-spa.db
+```
+
+Developers and tests may override the folder with the `DDAUTO_DATA_DIR` environment variable.
+Never point it at a Git-tracked directory for real business use.
+
 ## Repository structure
 
 ```text
 ddauto-spa-system/
 |-- apps/
-|   |-- server/              Express API and future SQLite access
-|   `-- web/                 React user interface
+|   |-- server/              Express API, SQLite migrations, and feature modules
+|   `-- web/                 React single-page application
 |-- packages/
 |   `-- contracts/           Shared constants and validation contracts
 |-- .github/workflows/       Automated repository checks
@@ -68,6 +84,16 @@ ddauto-spa-system/
 The server will use feature modules with route, controller, service, repository, and schema
 layers where those layers provide real value. This keeps the application understandable
 without forcing every small feature into unnecessary files.
+
+## Authentication foundation
+
+- Passwords are derived with Node.js `scrypt` and unique random salts.
+- The browser receives an HTTP-only, SameSite=Strict session cookie.
+- Only a SHA-256 hash of the random session token is stored in SQLite.
+- Sessions expire after 15 minutes of inactivity and have a 12-hour absolute limit.
+- State-changing authenticated requests require a separate CSRF token.
+- Repeated authentication failures are rate-limited.
+- Setup, login, logout, and password-reset activity is recorded in the audit log.
 
 ## Public-repository safety
 

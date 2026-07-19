@@ -11,5 +11,6 @@ export function getRuntimeConfig(environment = process.env) {
     host: environment.HOST ?? '127.0.0.1',
     port: parsedPort,
     nodeEnv: environment.NODE_ENV ?? 'development',
+    secureCookies: environment.DDAUTO_SECURE_COOKIES === 'true',
   };
 }
