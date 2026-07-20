@@ -3,6 +3,7 @@ import { BrandMark } from '../../components/BrandMark.jsx';
 import { CatalogSettings } from '../catalogs/CatalogSettings.jsx';
 import { ServiceSalesPage } from '../service-sales/ServiceSalesPage.jsx';
 import { TireInventoryPage } from '../tire-inventory/TireInventoryPage.jsx';
+import { CanteenInventoryPage } from '../canteen-inventory/CanteenInventoryPage.jsx';
 
 const modules = [
   'Dashboard',
@@ -112,6 +113,8 @@ export function DashboardShell({ user, csrfToken, onLogout }) {
             <ServiceSalesPage csrfToken={csrfToken} />
           ) : activeModule === 'Tires & inventory' ? (
             <TireInventoryPage csrfToken={csrfToken} />
+          ) : activeModule === 'Canteen' ? (
+            <CanteenInventoryPage csrfToken={csrfToken} />
           ) : activeModule === 'Settings' ? (
             <CatalogSettings csrfToken={csrfToken} />
           ) : (
@@ -153,13 +156,13 @@ function DashboardHome({ user }) {
       <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
           <div>
-            <h3 className="font-bold text-slate-950">Phase 2 foundation</h3>
+            <h3 className="font-bold text-slate-950">Operations foundation</h3>
             <p className="mt-1 text-sm leading-6 text-slate-600">
-              Login, local database storage, recovery, and audit foundations are active.
+              Owner access, service sales, tire inventory, and canteen inventory are active.
             </p>
           </div>
           <span className="w-fit rounded-xl bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-600">
-            Business modules are next
+            Offline and audit-ready
           </span>
         </div>
       </section>

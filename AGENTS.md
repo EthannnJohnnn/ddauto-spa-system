@@ -65,6 +65,15 @@
 - Require an owner-supplied reason when a service ticket is voided or restored, and preserve its
   audit history.
 
+## Canteen inventory rules
+
+- Keep canteen sales separate from service and tire sales and exclude them from service labor.
+- Classify products as drinks, snacks, or other and allow optional beginning inventory.
+- Snapshot item name, category, unit cost, and selling price on every stock document.
+- Reject create, edit, void, or restore actions that make stock negative on any business date.
+- Require an owner-supplied reason when products are archived/restored or documents are
+  voided/restored, and preserve audit history.
+
 ## Tire inventory rules
 
 - Keep tire-product sales separate from Vulcanizing/Tire Change service transactions. Only a tire

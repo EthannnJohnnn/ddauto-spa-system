@@ -7,9 +7,9 @@ expenses, attendance, payroll, daily closing, and reports.
 The current foundation includes the local database, first-time owner setup, username/password
 login, protected SPA shell, session security, one-time password recovery, audit events, the
 owner-managed business catalogs, daily service transactions with attendance and payroll previews,
-and an audited tire-sales and inventory ledger. Canteen, general purchase and expense, final
-payroll, closing, and combined-report workflows will be added in later phases. Real business data
-is intentionally not included in the repository.
+an audited tire-sales and inventory ledger, and an audited canteen-sales and stock ledger. General
+purchase and expense, final payroll, closing, and combined-report workflows will be added in later
+phases. Real business data is intentionally not included in the repository.
 
 ## Technology
 
@@ -155,6 +155,24 @@ tire-product stock.
 
 Period summaries show tire sales, units sold, estimated gross profit, purchases, inventory units,
 inventory value at the product's current unit cost, and low/out-of-stock alerts.
+
+## Canteen sales and inventory
+
+The **Canteen** page records drinks, snacks, and other small items separately from service and tire
+sales. Its daily, weekly, and monthly views follow the owner's workbook while replacing overwritten
+spreadsheet totals with an audited stock ledger.
+
+- Canteen products store a category, current unit cost, selling price, and low-stock threshold.
+- A product can be opened with beginning inventory, followed by dated purchases, sales, and signed
+  physical-stock adjustments.
+- Multi-item documents snapshot product names, categories, costs, and selling prices so later
+  catalog changes do not alter history.
+- The system prevents any create, edit, void, or restore action that would make historical stock
+  negative.
+- Owner-only product and document changes are archived or voided with reasons and audit events.
+
+Period summaries show canteen sales, units sold, estimated gross profit, purchases, current stock
+value, and low/out-of-stock alerts.
 
 ## Public-repository safety
 
