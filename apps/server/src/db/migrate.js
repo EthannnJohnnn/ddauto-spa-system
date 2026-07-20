@@ -16,6 +16,11 @@ const migrations = [
     name: 'service sales and attendance',
     sql: readFileSync(new URL('./migrations/003_service_sales.sql', import.meta.url), 'utf8'),
   },
+  {
+    version: 4,
+    name: 'tire inventory ledger',
+    sql: readFileSync(new URL('./migrations/004_tire_inventory.sql', import.meta.url), 'utf8'),
+  },
 ];
 
 export function migrateDatabase(database) {
