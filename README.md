@@ -7,9 +7,10 @@ expenses, attendance, payroll, daily closing, and reports.
 The current foundation includes the local database, first-time owner setup, username/password
 login, protected SPA shell, session security, one-time password recovery, audit events, the
 owner-managed business catalogs, daily service transactions with attendance and payroll previews,
-an audited tire-sales and inventory ledger, and an audited canteen-sales and stock ledger. General
-purchase and expense, final payroll, closing, and combined-report workflows will be added in later
-phases. Real business data is intentionally not included in the repository.
+an audited tire-sales and inventory ledger, an audited canteen-sales and stock ledger, and the
+Phase 7 purchases-and-expenses workflow. Automatic salary and staff-meal expenses, final payroll,
+closing, and combined-report workflows will be added in later work. Real business data is
+intentionally not included in the repository.
 
 ## Technology
 
@@ -173,6 +174,30 @@ spreadsheet totals with an audited stock ledger.
 
 Period summaries show canteen sales, units sold, estimated gross profit, purchases, current stock
 value, and low/out-of-stock alerts.
+
+## Purchases and expenses
+
+The **Purchases & expenses** page provides daily, weekly, and monthly views of business outflows:
+
+- Tire and canteen purchase reports reuse the existing inventory purchase documents as their source
+  of truth. They can be requested together or filtered to tires or canteen without duplicating data.
+- The owner can create and rename expense categories or archive and restore them with a reason.
+  Utilities, supplies, repairs, staff meals, salaries, maintenance, materials, taxes, and other are
+  available initially, while additional categories remain owner-managed.
+- Manual expenses snapshot the category name and store their date, description, payee, reference,
+  amount in integer centavos, and notes.
+- Expense edits are owner-only. The user-facing delete behavior voids a transaction with a reason;
+  voided transactions remain visible for audit and can be restored without affecting totals while
+  voided.
+- A date-range overview returns active purchase and expense totals, a category breakdown, and the
+  complete active/voided history. The purchase tab can switch between all, tire-only, and
+  canteen-only records.
+- The owner can record and edit general expenses, delete or restore expenses and categories with a
+  reason, and jump from a purchase to its source tire or canteen inventory section for detailed
+  editing. Purchases can also be deleted or restored directly from the combined page.
+
+Salary and staff-meal expenses remain manual until the payroll workflow is finalized. The interface
+labels this boundary so payroll preview values are not accidentally counted twice.
 
 ## Public-repository safety
 

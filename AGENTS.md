@@ -91,6 +91,18 @@
 - Archive/restore tire products and void/restore inventory documents with owner-supplied reasons;
   never hard-delete them or their audit history.
 
+## Purchase and expense rules
+
+- Treat the tire and canteen inventory purchase documents as the purchase-report source of truth;
+  never copy them into a second purchase ledger.
+- Support combined, tire-only, and canteen-only purchase reporting for any date range.
+- Store general-expense amounts as integer centavos and snapshot the category name on every expense.
+- Keep expense categories owner-managed and available for historical references after archival.
+- Reserve payroll and staff-meal source types for automatic workflows; manual expense endpoints
+  must not modify system-generated expenses.
+- Require an owner-supplied reason when expense categories are archived/restored or expenses are
+  voided/restored, and preserve audit history.
+
 ## Completion standard
 
 Before calling work complete, run `npm run check`, inspect `git diff`, and confirm no sensitive

@@ -4,6 +4,7 @@ import { CatalogSettings } from '../catalogs/CatalogSettings.jsx';
 import { ServiceSalesPage } from '../service-sales/ServiceSalesPage.jsx';
 import { TireInventoryPage } from '../tire-inventory/TireInventoryPage.jsx';
 import { CanteenInventoryPage } from '../canteen-inventory/CanteenInventoryPage.jsx';
+import { PurchasesExpensesPage } from '../purchases-expenses/PurchasesExpensesPage.jsx';
 
 const modules = [
   'Dashboard',
@@ -115,6 +116,8 @@ export function DashboardShell({ user, csrfToken, onLogout }) {
             <TireInventoryPage csrfToken={csrfToken} />
           ) : activeModule === 'Canteen' ? (
             <CanteenInventoryPage csrfToken={csrfToken} />
+          ) : activeModule === 'Purchases & expenses' ? (
+            <PurchasesExpensesPage csrfToken={csrfToken} onNavigate={setActiveModule} />
           ) : activeModule === 'Settings' ? (
             <CatalogSettings csrfToken={csrfToken} />
           ) : (
