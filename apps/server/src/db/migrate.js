@@ -26,6 +26,11 @@ const migrations = [
     name: 'canteen inventory ledger',
     sql: readFileSync(new URL('./migrations/005_canteen_inventory.sql', import.meta.url), 'utf8'),
   },
+  {
+    version: 6,
+    name: 'purchases and expenses ledger',
+    sql: readFileSync(new URL('./migrations/006_purchases_expenses.sql', import.meta.url), 'utf8'),
+  },
 ];
 
 export function migrateDatabase(database) {

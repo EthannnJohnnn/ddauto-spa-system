@@ -27,6 +27,8 @@ describe('database foundation', () => {
       'canteen_products',
       'daily_attendance',
       'employees',
+      'expense_categories',
+      'expense_transactions',
       'recovery_codes',
       'schema_migrations',
       'service_prices',
@@ -41,7 +43,10 @@ describe('database foundation', () => {
       'users',
       'vehicle_classes',
     ]);
-    expect(database.prepare('SELECT COUNT(*) AS count FROM schema_migrations').get().count).toBe(5);
+    expect(database.prepare('SELECT COUNT(*) AS count FROM schema_migrations').get().count).toBe(6);
+    expect(database.prepare('SELECT COUNT(*) AS count FROM expense_categories').get().count).toBe(
+      10,
+    );
     expect(database.prepare('SELECT COUNT(*) AS count FROM services').get().count).toBe(5);
     expect(
       database.prepare("SELECT labor_policy FROM services WHERE name = 'Painting'").get()
