@@ -20,6 +20,9 @@ import { createServiceSalesRouter } from './modules/service-sales/service-sales.
 import { TireInventoryRepository } from './modules/tire-inventory/tire-inventory.repository.js';
 import { TireInventoryService } from './modules/tire-inventory/tire-inventory.service.js';
 import { createTireInventoryRouter } from './modules/tire-inventory/tire-inventory.routes.js';
+import { CanteenInventoryRepository } from './modules/canteen-inventory/canteen-inventory.repository.js';
+import { CanteenInventoryService } from './modules/canteen-inventory/canteen-inventory.service.js';
+import { createCanteenInventoryRouter } from './modules/canteen-inventory/canteen-inventory.routes.js';
 
 const currentDirectory = path.dirname(fileURLToPath(import.meta.url));
 const webDistDirectory = path.resolve(currentDirectory, '../../web/dist');
@@ -49,6 +52,15 @@ export function createApp({ database, runtimeConfig = getRuntimeConfig() }) {
     tireInventoryService,
     authModule.middleware,
   );
+  const canteenInventoryRepository = new CanteenInventoryRepository(database);
+  const canteenInventoryService = new CanteenInventoryService(
+    canteenInventoryRepository,
+    auditRepository,
+  );
+  const canteenInventoryRouter = createCanteenInventoryRouter(
+    canteenInventoryService,
+    authModule.middleware,
+  );
 
   app.disable('x-powered-by');
   app.use(
@@ -69,6 +81,7 @@ export function createApp({ database, runtimeConfig = getRuntimeConfig() }) {
   app.use('/api/v1/catalogs', catalogsRouter);
   app.use('/api/v1/service-sales', serviceSalesRouter);
   app.use('/api/v1/tire-inventory', tireInventoryRouter);
+  app.use('/api/v1/canteen-inventory', canteenInventoryRouter);
 
   if (existsSync(webDistDirectory)) {
     app.use(express.static(webDistDirectory));

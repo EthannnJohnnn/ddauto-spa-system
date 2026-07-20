@@ -22,6 +22,9 @@ describe('database foundation', () => {
 
     expect(tables).toEqual([
       'audit_events',
+      'canteen_inventory_document_items',
+      'canteen_inventory_documents',
+      'canteen_products',
       'daily_attendance',
       'employees',
       'recovery_codes',
@@ -38,7 +41,7 @@ describe('database foundation', () => {
       'users',
       'vehicle_classes',
     ]);
-    expect(database.prepare('SELECT COUNT(*) AS count FROM schema_migrations').get().count).toBe(4);
+    expect(database.prepare('SELECT COUNT(*) AS count FROM schema_migrations').get().count).toBe(5);
     expect(database.prepare('SELECT COUNT(*) AS count FROM services').get().count).toBe(5);
     expect(
       database.prepare("SELECT labor_policy FROM services WHERE name = 'Painting'").get()
