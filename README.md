@@ -6,9 +6,10 @@ expenses, attendance, payroll, daily closing, and reports.
 
 The current foundation includes the local database, first-time owner setup, username/password
 login, protected SPA shell, session security, one-time password recovery, audit events, the
-owner-managed business catalogs, and daily service transactions with attendance and payroll
-previews. Tire, canteen, purchase, expense, final payroll, closing, and combined-report workflows
-will be added in later phases. Real business data is intentionally not included in the repository.
+owner-managed business catalogs, daily service transactions with attendance and payroll previews,
+and an audited tire-sales and inventory ledger. Canteen, general purchase and expense, final
+payroll, closing, and combined-report workflows will be added in later phases. Real business data
+is intentionally not included in the repository.
 
 ## Technology
 
@@ -132,6 +133,28 @@ the owner, with an audit reason preserved for void and restore actions.
 
 Transaction rows snapshot the names, prices, labor policy, percentage, contractor cost, and worker
 shares used at the time of sale so later catalog changes do not rewrite historical calculations.
+
+## Tire sales and inventory
+
+The **Tires & inventory** page keeps tire-product sales separate from service sales while providing
+daily, weekly, and monthly summaries. Vulcanizing/Tire Change remains a service and does not reduce
+tire-product stock.
+
+- Tire products store a category, tube type, size, current unit cost, selling price, and low-stock
+  threshold.
+- A new product may include beginning inventory, or beginning stock may be recorded later as a
+  separate document.
+- Beginning inventory and purchases add stock, tire sales subtract stock, and physical-count or
+  damage corrections use signed adjustments with a required reason.
+- Documents may contain multiple distinct tire products and preserve product, quantity, cost, and
+  selling-price snapshots for historical accuracy.
+- The system rejects any create, edit, void, or restore action that would make a product's stock
+  negative on any business date.
+- The owner can edit products and documents, archive or restore products, and void or restore
+  inventory documents. Status changes require a reason and remain in the audit history.
+
+Period summaries show tire sales, units sold, estimated gross profit, purchases, inventory units,
+inventory value at the product's current unit cost, and low/out-of-stock alerts.
 
 ## Public-repository safety
 

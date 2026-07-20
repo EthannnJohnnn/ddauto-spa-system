@@ -65,6 +65,23 @@
 - Require an owner-supplied reason when a service ticket is voided or restored, and preserve its
   audit history.
 
+## Tire inventory rules
+
+- Keep tire-product sales separate from Vulcanizing/Tire Change service transactions. Only a tire
+  product sale reduces tire inventory.
+- Derive stock from active immutable ledger documents: beginning inventory and purchases add stock,
+  sales subtract stock, and adjustments use a signed quantity.
+- Require a reason in the notes for every stock adjustment.
+- Snapshot the product name, category, tube type, size, quantity, cost, selling price, stock delta,
+  and line total on every tire inventory document item.
+- Reject any create, edit, void, or restore action that would produce negative end-of-day stock on
+  any business date.
+- Permit at most one active beginning-inventory entry per tire product.
+- Use the product's current unit cost for current inventory valuation and snapshot that cost on a
+  sale for estimated historical gross profit.
+- Archive/restore tire products and void/restore inventory documents with owner-supplied reasons;
+  never hard-delete them or their audit history.
+
 ## Completion standard
 
 Before calling work complete, run `npm run check`, inspect `git diff`, and confirm no sensitive

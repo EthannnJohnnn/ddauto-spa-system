@@ -32,10 +32,13 @@ describe('database foundation', () => {
       'service_tickets',
       'services',
       'sessions',
+      'tire_inventory_document_items',
+      'tire_inventory_documents',
+      'tire_products',
       'users',
       'vehicle_classes',
     ]);
-    expect(database.prepare('SELECT COUNT(*) AS count FROM schema_migrations').get().count).toBe(3);
+    expect(database.prepare('SELECT COUNT(*) AS count FROM schema_migrations').get().count).toBe(4);
     expect(database.prepare('SELECT COUNT(*) AS count FROM services').get().count).toBe(5);
     expect(
       database.prepare("SELECT labor_policy FROM services WHERE name = 'Painting'").get()

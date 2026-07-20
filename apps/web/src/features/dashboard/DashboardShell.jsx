@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { BrandMark } from '../../components/BrandMark.jsx';
 import { CatalogSettings } from '../catalogs/CatalogSettings.jsx';
 import { ServiceSalesPage } from '../service-sales/ServiceSalesPage.jsx';
+import { TireInventoryPage } from '../tire-inventory/TireInventoryPage.jsx';
 
 const modules = [
   'Dashboard',
@@ -109,6 +110,8 @@ export function DashboardShell({ user, csrfToken, onLogout }) {
             <DashboardHome user={user} />
           ) : activeModule === 'Service sales' ? (
             <ServiceSalesPage csrfToken={csrfToken} />
+          ) : activeModule === 'Tires & inventory' ? (
+            <TireInventoryPage csrfToken={csrfToken} />
           ) : activeModule === 'Settings' ? (
             <CatalogSettings csrfToken={csrfToken} />
           ) : (
