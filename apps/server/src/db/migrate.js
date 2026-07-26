@@ -31,6 +31,11 @@ const migrations = [
     name: 'purchases and expenses ledger',
     sql: readFileSync(new URL('./migrations/006_purchases_expenses.sql', import.meta.url), 'utf8'),
   },
+  {
+    version: 7,
+    name: 'payroll closing and generated expenses',
+    sql: readFileSync(new URL('./migrations/007_payroll_closing.sql', import.meta.url), 'utf8'),
+  },
 ];
 
 export function migrateDatabase(database) {

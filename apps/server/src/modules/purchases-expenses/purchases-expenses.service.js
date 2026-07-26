@@ -103,6 +103,13 @@ export class PurchasesExpensesService {
 
   createExpense(input, actorUserId) {
     const category = this.requireCategory(input.categoryId);
+    if (category.system_code) {
+      throw new AppError(
+        409,
+        'SYSTEM_EXPENSE_CATEGORY_RESERVED',
+        'Salary and staff-meal expenses are created by payroll closing.',
+      );
+    }
     if (!category.is_active) {
       throw new AppError(
         409,
@@ -134,6 +141,13 @@ export class PurchasesExpensesService {
   updateExpense(expenseId, input, actorUserId) {
     const current = this.requireEditableExpense(expenseId);
     const category = this.requireCategory(input.categoryId);
+    if (category.system_code && category.id !== current.category_id) {
+      throw new AppError(
+        409,
+        'SYSTEM_EXPENSE_CATEGORY_RESERVED',
+        'Salary and staff-meal expenses are created by payroll closing.',
+      );
+    }
     if (!category.is_active && category.id !== current.category_id) {
       throw new AppError(
         409,
@@ -261,7 +275,12 @@ export class PurchasesExpensesService {
 }
 
 function mapCategory(row) {
-  return { id: row.id, name: row.name, isActive: Boolean(row.is_active) };
+  return {
+    id: row.id,
+    name: row.name,
+    isActive: Boolean(row.is_active),
+    systemCode: row.system_code ?? null,
+  };
 }
 
 function mapExpense(row) {

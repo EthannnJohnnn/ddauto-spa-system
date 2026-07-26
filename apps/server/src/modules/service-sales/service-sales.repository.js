@@ -25,6 +25,18 @@ export class ServiceSalesRepository {
       .get();
   }
 
+  isPayrollDateClosed(businessDate) {
+    return Boolean(
+      this.database
+        .prepare(
+          `SELECT 1 FROM payroll_runs
+           WHERE business_date = ? AND status = 'CLOSED'
+           LIMIT 1`,
+        )
+        .get(businessDate),
+    );
+  }
+
   nextCustomerSequence(businessDate) {
     return this.database
       .prepare(

@@ -2,9 +2,16 @@ import { useEffect, useMemo, useState } from 'react';
 import { centavosToInput, inputToCentavos } from '../catalogs/catalog-formatters.js';
 
 export function ExpenseForm({ categories, businessDate, editingExpense, onCancel, onSave }) {
+  const selectableCategories = useMemo(
+    () =>
+      categories.filter(
+        (category) => !category.systemCode || category.id === editingExpense?.categoryId,
+      ),
+    [categories, editingExpense],
+  );
   const firstActiveCategoryId = useMemo(
-    () => categories.find((category) => category.isActive)?.id ?? '',
-    [categories],
+    () => selectableCategories.find((category) => category.isActive)?.id ?? '',
+    [selectableCategories],
   );
   const [values, setValues] = useState(() => emptyValues(businessDate, firstActiveCategoryId));
   const [busy, setBusy] = useState(false);
@@ -86,7 +93,7 @@ export function ExpenseForm({ categories, businessDate, editingExpense, onCancel
             <option disabled value="">
               Select category
             </option>
-            {categories.map((category) => (
+            {selectableCategories.map((category) => (
               <option
                 disabled={!category.isActive && Number(values.categoryId) !== category.id}
                 key={category.id}
