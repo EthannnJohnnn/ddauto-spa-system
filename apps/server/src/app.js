@@ -32,6 +32,9 @@ import { createPayrollRouter } from './modules/payroll/payroll.routes.js';
 import { ReportsRepository } from './modules/reports/reports.repository.js';
 import { ReportsService } from './modules/reports/reports.service.js';
 import { createReportsRouter } from './modules/reports/reports.routes.js';
+import { DailyCloseRepository } from './modules/daily-close/daily-close.repository.js';
+import { BusinessDateGuard, DailyCloseService } from './modules/daily-close/daily-close.service.js';
+import { createDailyCloseRouter } from './modules/daily-close/daily-close.routes.js';
 
 const currentDirectory = path.dirname(fileURLToPath(import.meta.url));
 const webDistDirectory = path.resolve(currentDirectory, '../../web/dist');
@@ -52,11 +55,17 @@ export function createApp({ database, runtimeConfig = getRuntimeConfig() }) {
   const catalogsRepository = new CatalogsRepository(database);
   const catalogsService = new CatalogsService(catalogsRepository, auditRepository);
   const catalogsRouter = createCatalogsRouter(catalogsService, authModule.middleware);
+  const dailyCloseRepository = new DailyCloseRepository(database);
+  const businessDateGuard = new BusinessDateGuard(dailyCloseRepository);
   const serviceSalesRepository = new ServiceSalesRepository(database);
-  const serviceSalesService = new ServiceSalesService(serviceSalesRepository, auditRepository);
+  const serviceSalesService = new ServiceSalesService(serviceSalesRepository, auditRepository, {
+    dateGuard: businessDateGuard,
+  });
   const serviceSalesRouter = createServiceSalesRouter(serviceSalesService, authModule.middleware);
   const tireInventoryRepository = new TireInventoryRepository(database);
-  const tireInventoryService = new TireInventoryService(tireInventoryRepository, auditRepository);
+  const tireInventoryService = new TireInventoryService(tireInventoryRepository, auditRepository, {
+    dateGuard: businessDateGuard,
+  });
   const tireInventoryRouter = createTireInventoryRouter(
     tireInventoryService,
     authModule.middleware,
@@ -65,6 +74,7 @@ export function createApp({ database, runtimeConfig = getRuntimeConfig() }) {
   const canteenInventoryService = new CanteenInventoryService(
     canteenInventoryRepository,
     auditRepository,
+    { dateGuard: businessDateGuard },
   );
   const canteenInventoryRouter = createCanteenInventoryRouter(
     canteenInventoryService,
@@ -74,6 +84,7 @@ export function createApp({ database, runtimeConfig = getRuntimeConfig() }) {
   const purchasesExpensesService = new PurchasesExpensesService(
     purchasesExpensesRepository,
     auditRepository,
+    { dateGuard: businessDateGuard },
   );
   const purchasesExpensesRouter = createPurchasesExpensesRouter(
     purchasesExpensesService,
@@ -84,11 +95,19 @@ export function createApp({ database, runtimeConfig = getRuntimeConfig() }) {
     payrollRepository,
     serviceSalesService,
     auditRepository,
+    { dateGuard: businessDateGuard },
   );
   const payrollRouter = createPayrollRouter(payrollService, authModule.middleware);
   const reportsRepository = new ReportsRepository(database);
   const reportsService = new ReportsService(reportsRepository);
   const reportsRouter = createReportsRouter(reportsService, authModule.middleware);
+  const dailyCloseService = new DailyCloseService(
+    dailyCloseRepository,
+    reportsService,
+    payrollService,
+    auditRepository,
+  );
+  const dailyCloseRouter = createDailyCloseRouter(dailyCloseService, authModule.middleware);
 
   app.disable('x-powered-by');
   app.use(
@@ -113,6 +132,7 @@ export function createApp({ database, runtimeConfig = getRuntimeConfig() }) {
   app.use('/api/v1/purchases-expenses', purchasesExpensesRouter);
   app.use('/api/v1/payroll', payrollRouter);
   app.use('/api/v1/reports', reportsRouter);
+  app.use('/api/v1/daily-close', dailyCloseRouter);
 
   if (existsSync(webDistDirectory)) {
     app.use(express.static(webDistDirectory));

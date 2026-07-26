@@ -1,10 +1,11 @@
 import { AppError } from '../../errors/app-error.js';
 
 export class PurchasesExpensesService {
-  constructor(repository, auditRepository, { clock = () => new Date() } = {}) {
+  constructor(repository, auditRepository, { clock = () => new Date(), dateGuard = null } = {}) {
     this.repository = repository;
     this.auditRepository = auditRepository;
     this.clock = clock;
+    this.dateGuard = dateGuard;
   }
 
   getOverview({ start, end, purchaseSource }) {
@@ -102,6 +103,7 @@ export class PurchasesExpensesService {
   }
 
   createExpense(input, actorUserId) {
+    this.dateGuard?.assertOpen(input.businessDate);
     const category = this.requireCategory(input.categoryId);
     if (category.system_code) {
       throw new AppError(
@@ -140,6 +142,9 @@ export class PurchasesExpensesService {
 
   updateExpense(expenseId, input, actorUserId) {
     const current = this.requireEditableExpense(expenseId);
+    this.dateGuard?.assertOpen(current.business_date);
+    if (input.businessDate !== current.business_date)
+      this.dateGuard?.assertOpen(input.businessDate);
     const category = this.requireCategory(input.categoryId);
     if (category.system_code && category.id !== current.category_id) {
       throw new AppError(
@@ -179,6 +184,7 @@ export class PurchasesExpensesService {
 
   setExpenseActive(expenseId, isActive, reason, actorUserId) {
     const current = this.requireExpense(expenseId);
+    this.dateGuard?.assertOpen(current.business_date);
     if (current.source_type !== 'MANUAL') {
       throw new AppError(
         409,

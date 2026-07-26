@@ -1,11 +1,17 @@
 import { AppError } from '../../errors/app-error.js';
 
 export class PayrollService {
-  constructor(repository, serviceSalesService, auditRepository, { clock = () => new Date() } = {}) {
+  constructor(
+    repository,
+    serviceSalesService,
+    auditRepository,
+    { clock = () => new Date(), dateGuard = null } = {},
+  ) {
     this.repository = repository;
     this.serviceSalesService = serviceSalesService;
     this.auditRepository = auditRepository;
     this.clock = clock;
+    this.dateGuard = dateGuard;
   }
 
   getDailyPayroll(businessDate) {
@@ -25,6 +31,7 @@ export class PayrollService {
   }
 
   close(input, actorUserId) {
+    this.dateGuard?.assertOpen(input.businessDate);
     if (this.repository.findClosedRun(input.businessDate)) {
       throw new AppError(409, 'PAYROLL_ALREADY_CLOSED', 'Payroll is already closed for this date.');
     }
@@ -115,6 +122,7 @@ export class PayrollService {
   }
 
   reopen(input, actorUserId) {
+    this.dateGuard?.assertOpen(input.businessDate);
     const run = this.repository.findClosedRun(input.businessDate);
     if (!run) {
       throw new AppError(409, 'PAYROLL_NOT_CLOSED', 'Payroll is not closed for this date.');
