@@ -26,6 +26,7 @@ describe('database foundation', () => {
       'canteen_inventory_documents',
       'canteen_products',
       'daily_attendance',
+      'daily_close_runs',
       'employees',
       'expense_categories',
       'expense_transactions',
@@ -45,7 +46,7 @@ describe('database foundation', () => {
       'users',
       'vehicle_classes',
     ]);
-    expect(database.prepare('SELECT COUNT(*) AS count FROM schema_migrations').get().count).toBe(7);
+    expect(database.prepare('SELECT COUNT(*) AS count FROM schema_migrations').get().count).toBe(8);
     expect(database.prepare('SELECT COUNT(*) AS count FROM expense_categories').get().count).toBe(
       10,
     );

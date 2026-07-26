@@ -3,10 +3,11 @@ import { AppError } from '../../errors/app-error.js';
 const DEFAULT_MEAL_COST_CENTAVOS = 5_000;
 
 export class ServiceSalesService {
-  constructor(repository, auditRepository, { clock = () => new Date() } = {}) {
+  constructor(repository, auditRepository, { clock = () => new Date(), dateGuard = null } = {}) {
     this.repository = repository;
     this.auditRepository = auditRepository;
     this.clock = clock;
+    this.dateGuard = dateGuard;
   }
 
   getDailySales(businessDate) {
@@ -375,6 +376,7 @@ export class ServiceSalesService {
   }
 
   assertPayrollOpen(businessDate) {
+    this.dateGuard?.assertOpen(businessDate);
     if (this.repository.isPayrollDateClosed(businessDate)) {
       throw new AppError(
         409,

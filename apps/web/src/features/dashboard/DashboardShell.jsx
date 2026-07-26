@@ -8,6 +8,8 @@ import { CanteenInventoryPage } from '../canteen-inventory/CanteenInventoryPage.
 import { PurchasesExpensesPage } from '../purchases-expenses/PurchasesExpensesPage.jsx';
 import { ReportsPage } from '../reports/ReportsPage.jsx';
 import { getReportsOverview } from '../reports/reports-api.js';
+import { AttendancePayrollPage } from '../attendance-payroll/AttendancePayrollPage.jsx';
+import { DailyClosePage } from '../daily-close/DailyClosePage.jsx';
 
 const modules = [
   'Dashboard',
@@ -114,8 +116,12 @@ export function DashboardShell({ user, csrfToken, onLogout }) {
             <CanteenInventoryPage csrfToken={csrfToken} />
           ) : activeModule === 'Purchases & expenses' ? (
             <PurchasesExpensesPage csrfToken={csrfToken} onNavigate={setActiveModule} />
+          ) : activeModule === 'Attendance & payroll' ? (
+            <AttendancePayrollPage csrfToken={csrfToken} />
           ) : activeModule === 'Reports' ? (
             <ReportsPage />
+          ) : activeModule === 'Daily close' ? (
+            <DailyClosePage csrfToken={csrfToken} onNavigate={setActiveModule} />
           ) : activeModule === 'Settings' ? (
             <CatalogSettings csrfToken={csrfToken} />
           ) : (

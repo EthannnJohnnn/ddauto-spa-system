@@ -1,10 +1,11 @@
 import { AppError } from '../../errors/app-error.js';
 
 export class TireInventoryService {
-  constructor(repository, auditRepository, { clock = () => new Date() } = {}) {
+  constructor(repository, auditRepository, { clock = () => new Date(), dateGuard = null } = {}) {
     this.repository = repository;
     this.auditRepository = auditRepository;
     this.clock = clock;
+    this.dateGuard = dateGuard;
   }
 
   getOverview({ start, end }) {
@@ -51,6 +52,7 @@ export class TireInventoryService {
   }
 
   createProduct(input, actorUserId) {
+    if (input.beginningInventory) this.dateGuard?.assertOpen(input.beginningInventory.businessDate);
     this.assertProductNameAvailable(input.name, input.size);
     const now = this.now();
     let productId;
@@ -155,6 +157,7 @@ export class TireInventoryService {
   }
 
   createDocument(input, actorUserId) {
+    this.dateGuard?.assertOpen(input.businessDate);
     const normalized = this.normalizeDocument(input);
     if (input.documentType === 'BEGINNING') {
       this.assertBeginningEntriesAvailable(normalized.items);
@@ -189,6 +192,9 @@ export class TireInventoryService {
 
   updateDocument(documentId, input, actorUserId) {
     const current = this.requireDocument(documentId);
+    this.dateGuard?.assertOpen(current.business_date);
+    if (input.businessDate !== current.business_date)
+      this.dateGuard?.assertOpen(input.businessDate);
     if (current.status !== 'ACTIVE') {
       throw new AppError(409, 'TIRE_DOCUMENT_VOIDED', 'Restore the document before editing it.');
     }
@@ -231,6 +237,7 @@ export class TireInventoryService {
 
   setDocumentActive(documentId, isActive, reason, actorUserId) {
     const current = this.requireDocument(documentId);
+    this.dateGuard?.assertOpen(current.business_date);
     const targetStatus = isActive ? 'ACTIVE' : 'VOIDED';
     if (current.status === targetStatus) {
       throw new AppError(

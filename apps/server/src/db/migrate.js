@@ -36,6 +36,11 @@ const migrations = [
     name: 'payroll closing and generated expenses',
     sql: readFileSync(new URL('./migrations/007_payroll_closing.sql', import.meta.url), 'utf8'),
   },
+  {
+    version: 8,
+    name: 'daily business closing',
+    sql: readFileSync(new URL('./migrations/008_daily_close.sql', import.meta.url), 'utf8'),
+  },
 ];
 
 export function migrateDatabase(database) {
