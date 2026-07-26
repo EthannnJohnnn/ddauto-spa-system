@@ -8,9 +8,8 @@ The current foundation includes the local database, first-time owner setup, user
 login, protected SPA shell, session security, one-time password recovery, audit events, the
 owner-managed business catalogs, daily service transactions with attendance and payroll previews,
 an audited tire-sales and inventory ledger, an audited canteen-sales and stock ledger, purchases
-and expenses, and the Phase 8 payroll-closing workflow. Daily business closing and combined-report
-workflows will be added in later work. Real business data is intentionally not included in the
-repository.
+and expenses, payroll closing, and the Phase 9 combined-reporting workflow. Daily business closing
+will be added in later work. Real business data is intentionally not included in the repository.
 
 ## Technology
 
@@ -214,6 +213,24 @@ The **Purchases & expenses** page provides daily, weekly, and monthly views of b
 The manual expense form cannot edit, delete, or restore payroll-generated entries. Corrections must
 be made by reopening the source payroll date so the payroll snapshots and expense history remain
 synchronized.
+
+## Combined reports and dashboard
+
+The **Reports** page provides daily, Monday-to-Sunday weekly, and monthly views while reading every
+amount from its original source ledger:
+
+- Service, tire, and canteen sales remain separate and are also combined into a total.
+- A daily summary lists every calendar day in the selected period, including zero-activity days.
+- Separate transaction tabs show the individual service, tire, and canteen sale records. Voided
+  records remain visible for audit but are excluded from totals.
+- Estimated gross profit subtracts tire and canteen sold-item cost snapshots plus outside-contractor
+  labor. Estimated net then subtracts active operating expenses, including finalized payroll.
+- Cash movement subtracts stock purchases, expenses, and outside-contractor labor from collected
+  sales. Inventory purchases are not also subtracted from estimated net because sold-item cost is
+  already represented there.
+- The Dashboard now displays live service, tire, canteen, and combined totals for the current day.
+
+Report queries support at most 366 days at a time and require an authenticated local session.
 
 ## Public-repository safety
 
