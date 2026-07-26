@@ -1,7 +1,13 @@
 import { useEffect, useState } from 'react';
 import { centavosToInput, formatPeso, inputToCentavos } from '../catalogs/catalog-formatters.js';
 
-export function AttendancePayrollPanel({ attendance, businessDate, payroll, onSave }) {
+export function AttendancePayrollPanel({
+  attendance,
+  businessDate,
+  payroll,
+  onSave,
+  locked = false,
+}) {
   const [mealInputs, setMealInputs] = useState({});
   const [busyEmployeeId, setBusyEmployeeId] = useState(null);
   const [error, setError] = useState('');
@@ -11,7 +17,7 @@ export function AttendancePayrollPanel({ attendance, businessDate, payroll, onSa
       Object.fromEntries(
         attendance.map((entry) => [
           entry.employeeId,
-          centavosToInput(entry.mealCostCentavos ?? 5_000),
+          centavosToInput(entry.isPresent ? entry.mealCostCentavos : 5_000),
         ]),
       ),
     );
@@ -51,7 +57,7 @@ export function AttendancePayrollPanel({ attendance, businessDate, payroll, onSa
                   <input
                     checked={entry.isPresent}
                     className="h-4 w-4 accent-teal-700"
-                    disabled={busyEmployeeId === entry.employeeId}
+                    disabled={locked || busyEmployeeId === entry.employeeId}
                     onChange={(event) => save(entry, event.target.checked)}
                     type="checkbox"
                   />
@@ -86,7 +92,7 @@ export function AttendancePayrollPanel({ attendance, businessDate, payroll, onSa
                   </label>
                   <button
                     className="rounded-lg bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-700"
-                    disabled={busyEmployeeId === entry.employeeId}
+                    disabled={locked || busyEmployeeId === entry.employeeId}
                     onClick={() => save(entry)}
                     type="button"
                   >

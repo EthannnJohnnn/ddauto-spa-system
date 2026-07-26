@@ -7,10 +7,10 @@ expenses, attendance, payroll, daily closing, and reports.
 The current foundation includes the local database, first-time owner setup, username/password
 login, protected SPA shell, session security, one-time password recovery, audit events, the
 owner-managed business catalogs, daily service transactions with attendance and payroll previews,
-an audited tire-sales and inventory ledger, an audited canteen-sales and stock ledger, and the
-Phase 7 purchases-and-expenses workflow. Automatic salary and staff-meal expenses, final payroll,
-closing, and combined-report workflows will be added in later work. Real business data is
-intentionally not included in the repository.
+an audited tire-sales and inventory ledger, an audited canteen-sales and stock ledger, purchases
+and expenses, and the Phase 8 payroll-closing workflow. Daily business closing and combined-report
+workflows will be added in later work. Real business data is intentionally not included in the
+repository.
 
 ## Technology
 
@@ -135,6 +135,21 @@ the owner, with an audit reason preserved for void and restore actions.
 Transaction rows snapshot the names, prices, labor policy, percentage, contractor cost, and worker
 shares used at the time of sale so later catalog changes do not rewrite historical calculations.
 
+## Payroll closing
+
+The owner finalizes a business date from the **Service sales** page after checking attendance,
+employee assignments, meal costs, and the payroll preview:
+
+- Closing snapshots every employee's name, fixed daily rate, job labor, fixed-rate top-up, total
+  pay, and meal cost for that run.
+- A closed run automatically creates protected Salary and Staff Meal expense transactions. Stable
+  internal category codes keep the automation working if the owner renames those category labels.
+- Service-ticket and attendance changes are blocked for a closed date so finalized totals cannot
+  drift away from their expense entries.
+- Reopening requires an owner reason, voids the generated expenses, unlocks corrections, and keeps
+  the original run in history. Closing again creates a new immutable run and replacement expenses.
+- Payroll closing and reopening are owner-only, CSRF-protected, and recorded in the audit log.
+
 ## Tire sales and inventory
 
 The **Tires & inventory** page keeps tire-product sales separate from service sales while providing
@@ -196,8 +211,9 @@ The **Purchases & expenses** page provides daily, weekly, and monthly views of b
   reason, and jump from a purchase to its source tire or canteen inventory section for detailed
   editing. Purchases can also be deleted or restored directly from the combined page.
 
-Salary and staff-meal expenses remain manual until the payroll workflow is finalized. The interface
-labels this boundary so payroll preview values are not accidentally counted twice.
+The manual expense form cannot edit, delete, or restore payroll-generated entries. Corrections must
+be made by reopening the source payroll date so the payroll snapshots and expense history remain
+synchronized.
 
 ## Public-repository safety
 

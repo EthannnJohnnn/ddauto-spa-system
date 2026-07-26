@@ -1,6 +1,6 @@
 import { formatPeso } from '../catalogs/catalog-formatters.js';
 
-export function DailyTransactions({ tickets, onEdit, onStatus, className = '' }) {
+export function DailyTransactions({ tickets, onEdit, onStatus, locked = false, className = '' }) {
   return (
     <section
       className={`${className} overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm`}
@@ -77,7 +77,7 @@ export function DailyTransactions({ tickets, onEdit, onStatus, className = '' })
                     {formatPeso(ticket.totalCentavos)}
                   </p>
                   <div className="mt-2 flex gap-2">
-                    {ticket.status === 'ACTIVE' && (
+                    {ticket.status === 'ACTIVE' && !locked && (
                       <button
                         className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700"
                         onClick={() => onEdit(ticket)}
@@ -86,13 +86,15 @@ export function DailyTransactions({ tickets, onEdit, onStatus, className = '' })
                         Edit
                       </button>
                     )}
-                    <button
-                      className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700"
-                      onClick={() => onStatus(ticket)}
-                      type="button"
-                    >
-                      {ticket.status === 'ACTIVE' ? 'Void' : 'Restore'}
-                    </button>
+                    {!locked && (
+                      <button
+                        className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700"
+                        onClick={() => onStatus(ticket)}
+                        type="button"
+                      >
+                        {ticket.status === 'ACTIVE' ? 'Void' : 'Restore'}
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>

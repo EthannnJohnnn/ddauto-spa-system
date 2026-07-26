@@ -29,6 +29,8 @@ describe('database foundation', () => {
       'employees',
       'expense_categories',
       'expense_transactions',
+      'payroll_run_items',
+      'payroll_runs',
       'recovery_codes',
       'schema_migrations',
       'service_prices',
@@ -43,7 +45,7 @@ describe('database foundation', () => {
       'users',
       'vehicle_classes',
     ]);
-    expect(database.prepare('SELECT COUNT(*) AS count FROM schema_migrations').get().count).toBe(6);
+    expect(database.prepare('SELECT COUNT(*) AS count FROM schema_migrations').get().count).toBe(7);
     expect(database.prepare('SELECT COUNT(*) AS count FROM expense_categories').get().count).toBe(
       10,
     );

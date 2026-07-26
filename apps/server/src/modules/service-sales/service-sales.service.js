@@ -66,6 +66,7 @@ export class ServiceSalesService {
   }
 
   createTicket(input, actorUserId) {
+    this.assertPayrollOpen(input.businessDate);
     const normalized = this.normalizeTicket(input);
     const now = this.now();
     let ticketId;
@@ -94,6 +95,10 @@ export class ServiceSalesService {
 
   updateTicket(ticketId, input, actorUserId) {
     const current = this.requireTicket(ticketId);
+    this.assertPayrollOpen(current.business_date);
+    if (input.businessDate !== current.business_date) {
+      this.assertPayrollOpen(input.businessDate);
+    }
     if (current.status !== 'ACTIVE') {
       throw new AppError(409, 'TICKET_VOIDED', 'Restore the transaction before editing it.');
     }
@@ -129,6 +134,7 @@ export class ServiceSalesService {
 
   setTicketStatus(ticketId, isActive, reason, actorUserId) {
     const current = this.requireTicket(ticketId);
+    this.assertPayrollOpen(current.business_date);
     const targetStatus = isActive ? 'ACTIVE' : 'VOIDED';
     if (current.status === targetStatus) {
       throw new AppError(
@@ -166,6 +172,7 @@ export class ServiceSalesService {
   }
 
   setAttendance(input, actorUserId) {
+    this.assertPayrollOpen(input.businessDate);
     const employee = this.requireEmployee(input.employeeId);
     if (input.isPresent && !employee.is_active) {
       throw new AppError(409, 'EMPLOYEE_ARCHIVED', 'Restore the employee before marking present.');
@@ -364,6 +371,16 @@ export class ServiceSalesService {
   ensureWorkerAttendance(businessDate, employees, actorUserId, now) {
     for (const employee of employees.values()) {
       this.repository.ensureAttendancePresent({ businessDate, employee, actorUserId, now });
+    }
+  }
+
+  assertPayrollOpen(businessDate) {
+    if (this.repository.isPayrollDateClosed(businessDate)) {
+      throw new AppError(
+        409,
+        'PAYROLL_DATE_CLOSED',
+        'Reopen payroll for this date before changing service transactions or attendance.',
+      );
     }
   }
 

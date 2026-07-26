@@ -201,8 +201,9 @@ export function PurchasesExpensesPage({ csrfToken, onNavigate }) {
         {activeTab === 'expenses' && (
           <div>
             <div className="mb-5 rounded-2xl border border-blue-200 bg-blue-50 px-5 py-4 text-sm leading-6 text-blue-900">
-              Expenses recorded here are manual. Salary and staff-meal entries will be generated
-              from finalized payroll later so preview amounts are never counted twice.
+              Expenses recorded with this form are manual. Finalized Salary and Staff Meal entries
+              are generated and protected by the payroll workflow so amounts are never counted
+              twice.
             </div>
             <div className="grid gap-6 xl:grid-cols-[24rem_minmax(0,1fr)]">
               <ExpenseForm

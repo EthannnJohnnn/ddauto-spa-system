@@ -45,7 +45,8 @@ export function ReasonDialog({ target, onCancel, onConfirm }) {
           Audit record
         </p>
         <h2 className="mt-2 text-2xl font-bold text-slate-950" id="reason-dialog-title">
-          {target.isActive ? 'Restore' : (target.inactiveVerb ?? 'Archive')} {target.label}?
+          {target.isActive ? (target.activeVerb ?? 'Restore') : (target.inactiveVerb ?? 'Archive')}{' '}
+          {target.label}?
         </h2>
         <p className="mt-3 leading-6 text-slate-600">
           The item will remain in history. Explain why its status is changing.

@@ -26,6 +26,9 @@ import { createCanteenInventoryRouter } from './modules/canteen-inventory/cantee
 import { PurchasesExpensesRepository } from './modules/purchases-expenses/purchases-expenses.repository.js';
 import { PurchasesExpensesService } from './modules/purchases-expenses/purchases-expenses.service.js';
 import { createPurchasesExpensesRouter } from './modules/purchases-expenses/purchases-expenses.routes.js';
+import { PayrollRepository } from './modules/payroll/payroll.repository.js';
+import { PayrollService } from './modules/payroll/payroll.service.js';
+import { createPayrollRouter } from './modules/payroll/payroll.routes.js';
 
 const currentDirectory = path.dirname(fileURLToPath(import.meta.url));
 const webDistDirectory = path.resolve(currentDirectory, '../../web/dist');
@@ -73,6 +76,13 @@ export function createApp({ database, runtimeConfig = getRuntimeConfig() }) {
     purchasesExpensesService,
     authModule.middleware,
   );
+  const payrollRepository = new PayrollRepository(database);
+  const payrollService = new PayrollService(
+    payrollRepository,
+    serviceSalesService,
+    auditRepository,
+  );
+  const payrollRouter = createPayrollRouter(payrollService, authModule.middleware);
 
   app.disable('x-powered-by');
   app.use(
@@ -95,6 +105,7 @@ export function createApp({ database, runtimeConfig = getRuntimeConfig() }) {
   app.use('/api/v1/tire-inventory', tireInventoryRouter);
   app.use('/api/v1/canteen-inventory', canteenInventoryRouter);
   app.use('/api/v1/purchases-expenses', purchasesExpensesRouter);
+  app.use('/api/v1/payroll', payrollRouter);
 
   if (existsSync(webDistDirectory)) {
     app.use(express.static(webDistDirectory));
