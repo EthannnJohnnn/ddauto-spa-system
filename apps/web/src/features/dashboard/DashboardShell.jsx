@@ -1,10 +1,13 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { BrandMark } from '../../components/BrandMark.jsx';
 import { CatalogSettings } from '../catalogs/CatalogSettings.jsx';
+import { formatPeso } from '../catalogs/catalog-formatters.js';
 import { ServiceSalesPage } from '../service-sales/ServiceSalesPage.jsx';
 import { TireInventoryPage } from '../tire-inventory/TireInventoryPage.jsx';
 import { CanteenInventoryPage } from '../canteen-inventory/CanteenInventoryPage.jsx';
 import { PurchasesExpensesPage } from '../purchases-expenses/PurchasesExpensesPage.jsx';
+import { ReportsPage } from '../reports/ReportsPage.jsx';
+import { getReportsOverview } from '../reports/reports-api.js';
 
 const modules = [
   'Dashboard',
@@ -16,13 +19,6 @@ const modules = [
   'Reports',
   'Daily close',
   'Settings',
-];
-
-const summaryCards = [
-  { label: "Today's service sales", value: '₱0.00', note: 'No transactions yet' },
-  { label: "Today's tire sales", value: '₱0.00', note: 'No transactions yet' },
-  { label: "Today's canteen sales", value: '₱0.00', note: 'No transactions yet' },
-  { label: "Today's total", value: '₱0.00', note: 'Combined sales' },
 ];
 
 export function DashboardShell({ user, csrfToken, onLogout }) {
@@ -118,6 +114,8 @@ export function DashboardShell({ user, csrfToken, onLogout }) {
             <CanteenInventoryPage csrfToken={csrfToken} />
           ) : activeModule === 'Purchases & expenses' ? (
             <PurchasesExpensesPage csrfToken={csrfToken} onNavigate={setActiveModule} />
+          ) : activeModule === 'Reports' ? (
+            <ReportsPage />
           ) : activeModule === 'Settings' ? (
             <CatalogSettings csrfToken={csrfToken} />
           ) : (
@@ -130,18 +128,40 @@ export function DashboardShell({ user, csrfToken, onLogout }) {
 }
 
 function DashboardHome({ user }) {
+  const [report, setReport] = useState(null);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    const today = todayLocal();
+    let active = true;
+    getReportsOverview(today, today)
+      .then((data) => active && setReport(data))
+      .catch((loadError) => active && setError(loadError.message));
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const summaryCards = dashboardCards(report?.summary);
+
   return (
     <div className="mx-auto max-w-7xl">
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
         <div>
           <p className="text-sm font-semibold text-teal-700">Overview</p>
           <h2 className="mt-1 text-3xl font-bold tracking-tight">Good day, {user.displayName}</h2>
-          <p className="mt-2 text-slate-600">The secure system foundation is ready.</p>
+          <p className="mt-2 text-slate-600">Today’s live totals from every sales ledger.</p>
         </div>
         <span className="w-fit rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-sm font-semibold text-emerald-700">
           Local system online
         </span>
       </div>
+
+      {error && (
+        <p className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          Today’s totals could not load: {error}
+        </p>
+      )}
 
       <div className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {summaryCards.map((card) => (
@@ -159,9 +179,9 @@ function DashboardHome({ user }) {
       <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
           <div>
-            <h3 className="font-bold text-slate-950">Operations foundation</h3>
+            <h3 className="font-bold text-slate-950">Combined reporting is active</h3>
             <p className="mt-1 text-sm leading-6 text-slate-600">
-              Owner access, service sales, tire inventory, and canteen inventory are active.
+              Open Reports for daily, weekly, or monthly sales and estimated financial summaries.
             </p>
           </div>
           <span className="w-fit rounded-xl bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-600">
@@ -171,6 +191,45 @@ function DashboardHome({ user }) {
       </section>
     </div>
   );
+}
+
+function dashboardCards(summary) {
+  if (!summary) {
+    return [
+      ["Today's service sales", '—', 'Loading live total'],
+      ["Today's tire sales", '—', 'Loading live total'],
+      ["Today's canteen sales", '—', 'Loading live total'],
+      ["Today's total", '—', 'Loading combined sales'],
+    ].map(([label, value, note]) => ({ label, value, note }));
+  }
+  return [
+    {
+      label: "Today's service sales",
+      value: formatPeso(summary.serviceSalesCentavos),
+      note: `${summary.serviceTransactionCount} transaction(s)`,
+    },
+    {
+      label: "Today's tire sales",
+      value: formatPeso(summary.tireSalesCentavos),
+      note: `${summary.tireTransactionCount} transaction(s)`,
+    },
+    {
+      label: "Today's canteen sales",
+      value: formatPeso(summary.canteenSalesCentavos),
+      note: `${summary.canteenTransactionCount} transaction(s)`,
+    },
+    {
+      label: "Today's total",
+      value: formatPeso(summary.totalSalesCentavos),
+      note: `Estimated net ${formatPeso(summary.estimatedNetCentavos)}`,
+    },
+  ];
+}
+
+function todayLocal() {
+  const now = new Date();
+  const offset = now.getTimezoneOffset() * 60_000;
+  return new Date(now.valueOf() - offset).toISOString().slice(0, 10);
 }
 
 function ModulePlaceholder({ module }) {
