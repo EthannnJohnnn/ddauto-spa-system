@@ -111,7 +111,7 @@ export function ServiceSalesPage({ csrfToken }) {
       <div className="flex flex-col justify-between gap-5 lg:flex-row lg:items-end">
         <div>
           <p className="text-sm font-semibold text-teal-700">Daily operations</p>
-          <h2 className="mt-1 text-3xl font-bold tracking-tight text-slate-950">Service sales</h2>
+          <h2 className="ui-page-heading mt-1">Service sales</h2>
           <p className="mt-2 max-w-2xl leading-7 text-slate-600">
             Record each vehicle, its services, and the employees who performed the work.
           </p>

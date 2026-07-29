@@ -1,16 +1,22 @@
 export function BrandMark({ compact = false, inverted = false }) {
   return (
-    <div className="flex items-center gap-3">
-      <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-teal-600 text-lg font-black text-white shadow-lg shadow-teal-600/20">
-        DD
+    <div className="flex items-center gap-2.5">
+      <div className="grid h-14 w-24 shrink-0 place-items-center overflow-hidden rounded-xl bg-white">
+        <img
+          alt="DD Auto Spa"
+          className="h-full w-full scale-110 object-contain"
+          src="/dd-auto-spa-logo.png"
+        />
       </div>
       {!compact && (
         <div>
-          <p className={`font-bold tracking-tight ${inverted ? 'text-white' : 'text-slate-950'}`}>
-            DD Auto Spa
+          <p
+            className={`text-sm font-bold tracking-tight ${inverted ? 'text-white' : 'text-blue-950'}`}
+          >
+            Management
           </p>
-          <p className={`text-xs font-medium ${inverted ? 'text-slate-400' : 'text-slate-500'}`}>
-            Management System
+          <p className={`text-xs font-medium ${inverted ? 'text-blue-100' : 'text-slate-500'}`}>
+            Business System
           </p>
         </div>
       )}

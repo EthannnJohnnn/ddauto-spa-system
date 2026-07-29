@@ -55,7 +55,7 @@ export function AttendancePayrollPage({ csrfToken }) {
     await load();
   }
 
-  if (loading && !daily) return <PageMessage title="Loading attendance and payrollâ€¦" />;
+  if (loading && !daily) return <PageMessage title="Loading attendance and payroll…" />;
   if (!daily || !payrollState) {
     return (
       <PageMessage detail={error} onRetry={load} title="Attendance and payroll could not load" />
@@ -67,9 +67,7 @@ export function AttendancePayrollPage({ csrfToken }) {
       <div className="flex flex-col justify-between gap-5 lg:flex-row lg:items-end">
         <div>
           <p className="text-sm font-semibold text-teal-700">Daily workforce</p>
-          <h2 className="mt-1 text-3xl font-bold tracking-tight text-slate-950">
-            Attendance & payroll
-          </h2>
+          <h2 className="ui-page-heading mt-1">Attendance & payroll</h2>
           <p className="mt-2 max-w-2xl leading-7 text-slate-600">
             Review attendance, meal deductions, job labor, fixed-rate top-ups, and finalized payroll
             from one place.
@@ -168,7 +166,7 @@ function PayrollHistory({ runs }) {
                 </span>
               </div>
               <p className="mt-2 text-sm text-slate-600">
-                {formatPeso(run.totalSalaryCentavos)} payroll Â· {formatPeso(run.totalMealCentavos)}{' '}
+                {formatPeso(run.totalSalaryCentavos)} payroll · {formatPeso(run.totalMealCentavos)}{' '}
                 meals
               </p>
               {run.reopenReason && (

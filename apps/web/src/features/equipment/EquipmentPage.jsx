@@ -70,12 +70,12 @@ export function EquipmentPage({ csrfToken }) {
     await load();
   }
 
-  if (!overview) return <PageMessage title="Loading equipmentâ€¦" detail={error} />;
+  if (!overview) return <PageMessage title="Loading equipment…" detail={error} />;
   return (
     <div className="mx-auto max-w-7xl">
       <div>
         <p className="text-sm font-semibold text-teal-700">Reusable asset register</p>
-        <h2 className="mt-1 text-3xl font-bold tracking-tight text-slate-950">Equipment</h2>
+        <h2 className="ui-page-heading mt-1">Equipment</h2>
         <p className="mt-2 max-w-3xl leading-7 text-slate-600">
           Track every towel, hose, machine, and tool individually, along with its current condition
           and related costs.
@@ -87,14 +87,14 @@ export function EquipmentPage({ csrfToken }) {
         </div>
       )}
       <Summary summary={overview.summary} />
-      <div className="mt-6 flex gap-2 border-b border-slate-200">
+      <div className="ui-tabs-shell flex gap-1">
         {[
           ['EQUIPMENT', 'Equipment'],
           ['CATEGORIES', 'Categories'],
           ['REPAIRS', 'Repair costs'],
         ].map(([value, label]) => (
           <button
-            className={`border-b-2 px-4 py-3 text-sm font-bold ${tab === value ? 'border-teal-700 text-teal-800' : 'border-transparent text-slate-500'}`}
+            className={`ui-tab ${tab === value ? 'ui-tab-active' : 'ui-tab-idle'}`}
             key={value}
             onClick={() => setTab(value)}
             type="button"
@@ -519,7 +519,7 @@ function EquipmentList({ items, onEdit, onEditBatch, onRepair, onArchive }) {
                     {!item.isActive && <Badge text="Deleted" />}
                   </div>
                   <p className="mt-2 text-sm text-slate-500">
-                    {item.categoryName} Â· Purchased {item.purchaseDate} Â·{' '}
+                    {item.categoryName} · Purchased {item.purchaseDate} ·{' '}
                     {formatPeso(item.unitCostCentavos)}
                   </p>
                   {item.notes && <p className="mt-2 text-sm text-slate-600">{item.notes}</p>}
@@ -619,7 +619,7 @@ function RepairList({ repairs, onEdit, onStatus }) {
                   {r.equipmentName} ({r.assetCode})
                 </p>
                 <p className="mt-1 text-sm text-slate-500">
-                  {r.businessDate} Â· {r.description} Â· {formatPeso(r.amountCentavos)}
+                  {r.businessDate} · {r.description} · {formatPeso(r.amountCentavos)}
                 </p>
                 {r.status === 'VOIDED' && (
                   <p className="mt-1 text-xs text-amber-700">Deleted: {r.voidReason}</p>
@@ -677,7 +677,7 @@ function FormCard({ title, subtitle, children, onSubmit, onCancel }) {
           disabled={busy}
           type="submit"
         >
-          {busy ? 'Savingâ€¦' : 'Save'}
+          {busy ? 'Saving…' : 'Save'}
         </button>
       </div>
     </form>
