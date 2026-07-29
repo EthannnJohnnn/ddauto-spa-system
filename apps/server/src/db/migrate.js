@@ -46,6 +46,11 @@ const migrations = [
     name: 'equipment inventory and generated expenses',
     sql: readFileSync(new URL('./migrations/009_equipment_inventory.sql', import.meta.url), 'utf8'),
   },
+  {
+    version: 10,
+    name: 'dashboard owner notes',
+    sql: readFileSync(new URL('./migrations/010_dashboard_notes.sql', import.meta.url), 'utf8'),
+  },
 ];
 
 export function migrateDatabase(database) {

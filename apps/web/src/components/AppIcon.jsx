@@ -56,6 +56,23 @@ const paths = {
   arrow: [<path key="a" d="m9 18 6-6-6-6" />],
   trend: [<path key="a" d="m3 17 6-6 4 4 8-8m-5 0h5v5" />],
   check: [<path key="a" d="m5 12 4 4L19 6" />],
+  plus: [<path key="a" d="M12 5v14M5 12h14" />],
+  note: [<path key="a" d="M5 3h14v18H5z" />, <path key="b" d="M8 8h8M8 12h8M8 16h5" />],
+  edit: [
+    <path key="a" d="M12 20h9" />,
+    <path key="b" d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4Z" />,
+  ],
+  trash: [
+    <path key="a" d="M3 6h18M8 6V4h8v2m3 0-1 15H6L5 6" />,
+    <path key="b" d="M10 11v5m4-5v5" />,
+  ],
+  alert: [
+    <path
+      key="a"
+      d="M10.3 3.7 2.5 17.2A2 2 0 0 0 4.2 20h15.6a2 2 0 0 0 1.7-2.8L13.7 3.7a2 2 0 0 0-3.4 0Z"
+    />,
+    <path key="b" d="M12 9v4m0 3h.01" />,
+  ],
   peso: [<path key="a" d="M7 21V3h6a5 5 0 0 1 0 10H7" />, <path key="b" d="M5 7h10M5 10h10" />],
 };
 

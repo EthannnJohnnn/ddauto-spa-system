@@ -59,6 +59,42 @@ export class ReportsRepository {
       .all(start, end);
   }
 
+  listTireLowStock(asOfDate) {
+    return this.listLowStock(
+      'tire_products',
+      'tire_inventory_documents',
+      'tire_inventory_document_items',
+      asOfDate,
+    );
+  }
+
+  listCanteenLowStock(asOfDate) {
+    return this.listLowStock(
+      'canteen_products',
+      'canteen_inventory_documents',
+      'canteen_inventory_document_items',
+      asOfDate,
+    );
+  }
+
+  listEquipmentAttention() {
+    return this.database
+      .prepare(
+        `SELECT item.id, item.name, item.asset_code, item.condition,
+                item.condition_checked_on, category.name AS category_name
+         FROM equipment_items item
+         JOIN equipment_categories category ON category.id = item.category_id
+         WHERE item.is_active = 1 AND item.condition <> 'GOOD'
+         ORDER BY CASE item.condition
+           WHEN 'DAMAGED' THEN 1
+           WHEN 'UNDER_REPAIR' THEN 2
+           ELSE 3
+         END, item.condition_checked_on, item.name COLLATE NOCASE, item.id
+         LIMIT 5`,
+      )
+      .all();
+  }
+
   listInventoryDocuments(tableName, documentType, start, end) {
     assertAllowedTable(tableName);
     return this.database
@@ -85,6 +121,27 @@ export class ReportsRepository {
       )
       .all(...ids);
   }
+
+  listLowStock(productTable, documentTable, itemTable, asOfDate) {
+    for (const tableName of [productTable, documentTable, itemTable]) assertAllowedTable(tableName);
+    return this.database
+      .prepare(
+        `SELECT product.*, COALESCE(SUM(
+           CASE WHEN document.status = 'ACTIVE' AND document.business_date <= ?
+             THEN item.stock_delta ELSE 0 END
+         ), 0) AS stock_quantity
+         FROM ${productTable} product
+         LEFT JOIN ${itemTable} item ON item.product_id = product.id
+         LEFT JOIN ${documentTable} document ON document.id = item.document_id
+         GROUP BY product.id
+         HAVING product.is_active = 1
+            AND stock_quantity <= product.low_stock_threshold
+         ORDER BY stock_quantity, product.low_stock_threshold DESC,
+                  product.name COLLATE NOCASE, product.id
+         LIMIT 5`,
+      )
+      .all(asOfDate);
+  }
 }
 
 function assertAllowedTable(tableName) {
@@ -94,6 +151,8 @@ function assertAllowedTable(tableName) {
     'tire_inventory_document_items',
     'canteen_inventory_documents',
     'canteen_inventory_document_items',
+    'tire_products',
+    'canteen_products',
   ]);
   if (!allowed.has(tableName)) throw new Error('Unsupported report table.');
 }

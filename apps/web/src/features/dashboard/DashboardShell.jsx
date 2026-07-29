@@ -12,6 +12,7 @@ import { getReportsOverview } from '../reports/reports-api.js';
 import { AttendancePayrollPage } from '../attendance-payroll/AttendancePayrollPage.jsx';
 import { DailyClosePage } from '../daily-close/DailyClosePage.jsx';
 import { EquipmentPage } from '../equipment/EquipmentPage.jsx';
+import { DashboardNotes } from './DashboardNotes.jsx';
 
 const navigation = [
   { label: 'Overview', items: [{ name: 'Dashboard', icon: 'dashboard' }] },
@@ -166,7 +167,7 @@ export function DashboardShell({ user, csrfToken, onLogout }) {
 
         <main className="relative p-5 sm:p-8 lg:p-10">
           {activeModule === 'Dashboard' ? (
-            <DashboardHome user={user} />
+            <DashboardHome csrfToken={csrfToken} onNavigate={setActiveModule} user={user} />
           ) : activeModule === 'Service sales' ? (
             <ServiceSalesPage csrfToken={csrfToken} />
           ) : activeModule === 'Tires & inventory' ? (
@@ -194,7 +195,7 @@ export function DashboardShell({ user, csrfToken, onLogout }) {
   );
 }
 
-function DashboardHome({ user }) {
+function DashboardHome({ user, csrfToken, onNavigate }) {
   const [report, setReport] = useState(null);
   const [error, setError] = useState('');
 
@@ -259,7 +260,8 @@ function DashboardHome({ user }) {
         ))}
       </div>
 
-      {report?.transactions && <DashboardAnalytics report={report} />}
+      {report?.transactions && <DashboardAnalytics onNavigate={onNavigate} report={report} />}
+      <DashboardNotes csrfToken={csrfToken} />
     </div>
   );
 }
@@ -306,10 +308,16 @@ function dashboardCards(summary) {
   ];
 }
 
-function DashboardAnalytics({ report }) {
+function DashboardAnalytics({ report, onNavigate }) {
   const serviceLeaders = rankTransactionItems(report.transactions.serviceSales, false);
   const tireLeaders = rankTransactionItems(report.transactions.tireSales, true);
+  const canteenLeaders = rankTransactionItems(report.transactions.canteenSales, true);
   const expenseLeaders = rankExpenses(report.expenses);
+  const operationalAlerts = report.operationalAlerts ?? {
+    equipmentAttention: [],
+    tireLowStock: [],
+    canteenLowStock: [],
+  };
 
   return (
     <div className="mt-6 grid gap-6 xl:grid-cols-12">
@@ -326,21 +334,122 @@ function DashboardAnalytics({ report }) {
         <SalesMix summary={report.summary} />
       </section>
 
-      <section className="rounded-2xl border border-blue-100 bg-white p-5 shadow-sm xl:col-span-4 sm:p-6">
+      <section className="rounded-2xl border border-blue-100 bg-white p-5 shadow-sm xl:col-span-3 sm:p-6">
         <SectionHeading detail="Ranked by recorded sales value." title="Top 5 services" />
         <RankingList emptyLabel="No service sales this month" items={serviceLeaders} />
       </section>
 
-      <section className="rounded-2xl border border-blue-100 bg-white p-5 shadow-sm xl:col-span-4 sm:p-6">
+      <section className="rounded-2xl border border-blue-100 bg-white p-5 shadow-sm xl:col-span-3 sm:p-6">
         <SectionHeading detail="Ranked by units sold, then sales value." title="Top 5 tires" />
         <RankingList emptyLabel="No tire sales this month" items={tireLeaders} showUnits />
       </section>
 
-      <section className="rounded-2xl border border-blue-100 bg-white p-5 shadow-sm xl:col-span-4 sm:p-6">
+      <section className="rounded-2xl border border-blue-100 bg-white p-5 shadow-sm xl:col-span-3 sm:p-6">
+        <SectionHeading detail="Best-selling snacks and drinks this month." title="Top 5 canteen" />
+        <RankingList emptyLabel="No canteen sales this month" items={canteenLeaders} showUnits />
+      </section>
+
+      <section className="rounded-2xl border border-blue-100 bg-white p-5 shadow-sm xl:col-span-3 sm:p-6">
         <SectionHeading detail="Largest operating-expense categories." title="Expense breakdown" />
         <RankingList emptyLabel="No expenses this month" items={expenseLeaders} />
       </section>
+
+      <OperationalCard
+        detail="Damaged, under repair, or needing attention."
+        emptyLabel="All active equipment is in good condition"
+        icon="equipment"
+        items={operationalAlerts.equipmentAttention}
+        onView={() => onNavigate('Equipment')}
+        title="Equipment needing attention"
+        type="equipment"
+      />
+      <OperationalCard
+        detail="Products at or below their alert level."
+        emptyLabel="No tires are currently low in stock"
+        icon="tires"
+        items={operationalAlerts.tireLowStock}
+        onView={() => onNavigate('Tires & inventory')}
+        title="Low-stock tires"
+        type="stock"
+      />
+      <OperationalCard
+        detail="Canteen products ready for restocking."
+        emptyLabel="No canteen products are currently low"
+        icon="canteen"
+        items={operationalAlerts.canteenLowStock}
+        onView={() => onNavigate('Canteen')}
+        title="Low-stock canteen"
+        type="stock"
+      />
     </div>
+  );
+}
+
+function OperationalCard({ title, detail, icon, items, emptyLabel, type, onView }) {
+  return (
+    <section className="rounded-2xl border border-blue-100 bg-white p-5 shadow-sm xl:col-span-4 sm:p-6">
+      <div className="flex items-center justify-between gap-3">
+        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-amber-50 text-amber-700">
+          <AppIcon className="h-[1.1rem] w-[1.1rem]" name={icon} />
+        </span>
+        <button
+          className="shrink-0 rounded-lg px-2.5 py-1.5 text-xs font-bold text-blue-700 hover:bg-blue-50"
+          onClick={onView}
+          type="button"
+        >
+          View all
+        </button>
+      </div>
+      <div className="mt-3">
+        <SectionHeading detail={detail} title={title} />
+      </div>
+      {items.length > 0 ? (
+        <div className="mt-5 divide-y divide-slate-100">
+          {items.slice(0, 5).map((item, index) => (
+            <div
+              className="flex items-center justify-between gap-3 py-3 first:pt-0 last:pb-0"
+              key={item.id}
+            >
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold text-slate-800">
+                  <span className="mr-2 text-slate-300">{index + 1}</span>
+                  {item.name}
+                  {item.size ? ` · ${item.size}` : ''}
+                </p>
+                <p className="mt-1 truncate text-xs text-slate-400">
+                  {type === 'equipment'
+                    ? `${item.assetCode} · ${item.categoryName}`
+                    : item.category}
+                </p>
+              </div>
+              {type === 'equipment' ? (
+                <span
+                  className={`shrink-0 rounded-full px-2.5 py-1 text-[0.68rem] font-bold ${conditionTone(item.condition)}`}
+                >
+                  {formatCondition(item.condition)}
+                </span>
+              ) : (
+                <div className="shrink-0 text-right">
+                  <p
+                    className={`text-sm font-bold ${item.stockQuantity === 0 ? 'text-red-600' : 'text-amber-700'}`}
+                  >
+                    {item.stockQuantity} left
+                  </p>
+                  <p className="mt-0.5 text-[0.68rem] text-slate-400">
+                    Alert at {item.lowStockThreshold}
+                  </p>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="mt-5 rounded-xl border border-dashed border-emerald-200 bg-emerald-50 px-4 py-7 text-center text-sm font-medium text-emerald-700">
+          <AppIcon className="mx-auto mb-2 h-5 w-5" name="check" />
+          {emptyLabel}
+        </div>
+      )}
+    </section>
   );
 }
 
@@ -356,9 +465,9 @@ function SectionHeading({ title, detail }) {
 function TrendChart({ days }) {
   const entries = [...days].reverse().slice(-14);
   const fields = [
-    ['totalSalesCentavos', 'Sales', '#095a98'],
-    ['purchaseCentavos', 'Purchases', '#38a8f8'],
-    ['expenseCentavos', 'Expenses', '#80c5ff'],
+    ['totalSalesCentavos', 'Sales', '#0870bd'],
+    ['purchaseCentavos', 'Purchases', '#059669'],
+    ['expenseCentavos', 'Expenses', '#d97706'],
   ];
   const maxValue = Math.max(1, ...entries.flatMap((day) => fields.map(([field]) => day[field])));
   const chartWidth = 720;
@@ -478,9 +587,9 @@ function TrendChart({ days }) {
 
 function SalesMix({ summary }) {
   const sources = [
-    ['Services', summary.serviceSalesCentavos, '#095a98'],
-    ['Tires', summary.tireSalesCentavos, '#38a8f8'],
-    ['Canteen', summary.canteenSalesCentavos, '#b9ddff'],
+    ['Services', summary.serviceSalesCentavos, '#0870bd'],
+    ['Tires', summary.tireSalesCentavos, '#7c3aed'],
+    ['Canteen', summary.canteenSalesCentavos, '#f59e0b'],
   ];
   const total = summary.totalSalesCentavos;
   const safeTotal = Math.max(total, 1);
@@ -584,6 +693,22 @@ function rankExpenses(expenses) {
   return [...totals.values()]
     .sort((leftItem, rightItem) => rightItem.valueCentavos - leftItem.valueCentavos)
     .slice(0, 5);
+}
+
+function formatCondition(condition) {
+  return (
+    {
+      DAMAGED: 'Damaged',
+      UNDER_REPAIR: 'Under repair',
+      NEEDS_ATTENTION: 'Needs attention',
+    }[condition] ?? condition
+  );
+}
+
+function conditionTone(condition) {
+  if (condition === 'DAMAGED') return 'bg-red-50 text-red-700';
+  if (condition === 'UNDER_REPAIR') return 'bg-violet-50 text-violet-700';
+  return 'bg-amber-50 text-amber-700';
 }
 
 function currentMonthRange(dateValue) {
