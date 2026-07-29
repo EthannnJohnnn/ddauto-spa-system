@@ -38,6 +38,9 @@ import { createDailyCloseRouter } from './modules/daily-close/daily-close.routes
 import { EquipmentRepository } from './modules/equipment/equipment.repository.js';
 import { EquipmentService } from './modules/equipment/equipment.service.js';
 import { createEquipmentRouter } from './modules/equipment/equipment.routes.js';
+import { DashboardRepository } from './modules/dashboard/dashboard.repository.js';
+import { DashboardService } from './modules/dashboard/dashboard.service.js';
+import { createDashboardRouter } from './modules/dashboard/dashboard.routes.js';
 
 const currentDirectory = path.dirname(fileURLToPath(import.meta.url));
 const webDistDirectory = path.resolve(currentDirectory, '../../web/dist');
@@ -55,6 +58,9 @@ export function createApp({ database, runtimeConfig = getRuntimeConfig() }) {
     secureCookies: runtimeConfig.secureCookies,
     enableRateLimit: runtimeConfig.nodeEnv !== 'test',
   });
+  const dashboardRepository = new DashboardRepository(database);
+  const dashboardService = new DashboardService(dashboardRepository, auditRepository);
+  const dashboardRouter = createDashboardRouter(dashboardService, authModule.middleware);
   const catalogsRepository = new CatalogsRepository(database);
   const catalogsService = new CatalogsService(catalogsRepository, auditRepository);
   const catalogsRouter = createCatalogsRouter(catalogsService, authModule.middleware);
@@ -133,6 +139,7 @@ export function createApp({ database, runtimeConfig = getRuntimeConfig() }) {
 
   app.use('/api/v1/health', healthRouter);
   app.use('/api/v1/auth', authModule.router);
+  app.use('/api/v1/dashboard', dashboardRouter);
   app.use('/api/v1/catalogs', catalogsRouter);
   app.use('/api/v1/service-sales', serviceSalesRouter);
   app.use('/api/v1/tire-inventory', tireInventoryRouter);

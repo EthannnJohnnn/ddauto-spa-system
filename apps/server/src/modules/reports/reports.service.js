@@ -21,6 +21,13 @@ export class ReportsService {
       canteenPurchases.map((row) => row.id),
     );
     const expenses = this.repository.listExpenses(start, end).map(mapExpense);
+    const operationalAlerts = {
+      equipmentAttention: this.repository.listEquipmentAttention().map(mapEquipmentAttention),
+      tireLowStock: this.repository.listTireLowStock(end).map((row) => mapLowStock(row, true)),
+      canteenLowStock: this.repository
+        .listCanteenLowStock(end)
+        .map((row) => mapLowStock(row, false)),
+    };
 
     const transactions = {
       serviceSales: mapServiceTransactions(serviceTickets, serviceItems),
@@ -41,9 +48,32 @@ export class ReportsService {
       transactions,
       purchases: purchases.sort(compareTransactions),
       expenses,
+      operationalAlerts,
       activityDayCount: activeDays.length,
     };
   }
+}
+
+function mapEquipmentAttention(row) {
+  return {
+    id: row.id,
+    name: row.name,
+    assetCode: row.asset_code,
+    categoryName: row.category_name,
+    condition: row.condition,
+    conditionCheckedOn: row.condition_checked_on,
+  };
+}
+
+function mapLowStock(row, includeTireDetails) {
+  return {
+    id: row.id,
+    name: row.name,
+    category: row.category,
+    ...(includeTireDetails ? { size: row.size, tireType: row.tire_type } : {}),
+    stockQuantity: row.stock_quantity ?? 0,
+    lowStockThreshold: row.low_stock_threshold,
+  };
 }
 
 function mapServiceTransactions(tickets, items) {

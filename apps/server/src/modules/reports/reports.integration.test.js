@@ -70,6 +70,13 @@ describe('combined reports API', () => {
     expect(response.body.transactions.serviceSales).toHaveLength(1);
     expect(response.body.transactions.tireSales).toHaveLength(2);
     expect(response.body.transactions.canteenSales).toHaveLength(1);
+    expect(response.body.operationalAlerts.tireLowStock).toEqual([
+      expect.objectContaining({ name: 'Test Tire', stockQuantity: -1 }),
+    ]);
+    expect(response.body.operationalAlerts.canteenLowStock).toEqual([
+      expect.objectContaining({ name: 'Water', stockQuantity: -1 }),
+    ]);
+    expect(response.body.operationalAlerts.equipmentAttention).toEqual([]);
     expect(response.body.activityDayCount).toBe(1);
   });
 });
