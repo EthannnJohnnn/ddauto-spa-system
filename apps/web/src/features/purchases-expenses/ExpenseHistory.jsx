@@ -74,7 +74,10 @@ export function ExpenseHistory({ expenses, onEdit, onStatus }) {
                       </button>
                     </div>
                   ) : (
-                    <p className="mt-2 text-xs font-semibold text-slate-400">Managed by payroll</p>
+                    <p className="mt-2 text-xs font-semibold text-slate-400">
+                      Managed by{' '}
+                      {expense.sourceType.startsWith('EQUIPMENT_') ? 'equipment' : 'payroll'}
+                    </p>
                   )}
                 </div>
               </div>

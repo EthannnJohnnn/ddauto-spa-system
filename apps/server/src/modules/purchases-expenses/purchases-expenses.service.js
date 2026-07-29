@@ -189,7 +189,7 @@ export class PurchasesExpensesService {
       throw new AppError(
         409,
         'SYSTEM_EXPENSE_LOCKED',
-        'System-generated expenses must be changed from their source workflow.',
+        'System-generated expenses must be changed from their payroll or equipment workflow.',
       );
     }
     const targetStatus = isActive ? 'ACTIVE' : 'VOIDED';
@@ -240,7 +240,7 @@ export class PurchasesExpensesService {
       throw new AppError(
         409,
         'SYSTEM_EXPENSE_LOCKED',
-        'System-generated expenses must be changed from their source workflow.',
+        'System-generated expenses must be changed from their payroll or equipment workflow.',
       );
     }
     return expense;

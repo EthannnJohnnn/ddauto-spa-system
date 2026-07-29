@@ -88,7 +88,7 @@ is complete only after its implementation is merged into `main` and `npm run che
 - Snapshot a finalized day's totals, preserve close/reopen history, require reasons for reopening,
   and block changes that would make closed totals drift until the date is reopened.
 
-## Phase 11 - Equipment condition and expenses (planned)
+## Phase 11 - Equipment condition and expenses (complete)
 
 ### Equipment records
 

@@ -103,6 +103,20 @@
 - Require an owner-supplied reason when expense categories are archived/restored or expenses are
   voided/restored, and preserve audit history.
 
+## Equipment rules
+
+- Track every reusable physical item individually; batch entry may generate multiple individually
+  coded records.
+- Use Good, Needs Attention, Under Repair, and Damaged as the fixed active conditions. Retirement
+  uses archive/restore with an owner-supplied reason.
+- Keep equipment categories owner-managed and preserve archived categories for historical use.
+- Treat equipment purchase batches and repairs as the source of truth for their protected generated
+  expenses; manual expense endpoints must not modify them.
+- Synchronize purchase and repair corrections with their linked expenses, and never remove past
+  expenses merely because equipment is archived.
+- Block dated purchase and repair cost changes after Daily Close until the business date is
+  reopened.
+
 ## Completion standard
 
 Before calling work complete, run `npm run check`, inspect `git diff`, and confirm no sensitive

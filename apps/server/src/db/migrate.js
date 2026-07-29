@@ -41,6 +41,11 @@ const migrations = [
     name: 'daily business closing',
     sql: readFileSync(new URL('./migrations/008_daily_close.sql', import.meta.url), 'utf8'),
   },
+  {
+    version: 9,
+    name: 'equipment inventory and generated expenses',
+    sql: readFileSync(new URL('./migrations/009_equipment_inventory.sql', import.meta.url), 'utf8'),
+  },
 ];
 
 export function migrateDatabase(database) {
