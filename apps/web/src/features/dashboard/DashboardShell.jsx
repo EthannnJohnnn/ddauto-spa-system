@@ -10,12 +10,14 @@ import { ReportsPage } from '../reports/ReportsPage.jsx';
 import { getReportsOverview } from '../reports/reports-api.js';
 import { AttendancePayrollPage } from '../attendance-payroll/AttendancePayrollPage.jsx';
 import { DailyClosePage } from '../daily-close/DailyClosePage.jsx';
+import { EquipmentPage } from '../equipment/EquipmentPage.jsx';
 
 const modules = [
   'Dashboard',
   'Service sales',
   'Tires & inventory',
   'Canteen',
+  'Equipment',
   'Purchases & expenses',
   'Attendance & payroll',
   'Reports',
@@ -114,6 +116,8 @@ export function DashboardShell({ user, csrfToken, onLogout }) {
             <TireInventoryPage csrfToken={csrfToken} />
           ) : activeModule === 'Canteen' ? (
             <CanteenInventoryPage csrfToken={csrfToken} />
+          ) : activeModule === 'Equipment' ? (
+            <EquipmentPage csrfToken={csrfToken} />
           ) : activeModule === 'Purchases & expenses' ? (
             <PurchasesExpensesPage csrfToken={csrfToken} onNavigate={setActiveModule} />
           ) : activeModule === 'Attendance & payroll' ? (

@@ -28,6 +28,11 @@ describe('database foundation', () => {
       'daily_attendance',
       'daily_close_runs',
       'employees',
+      'equipment_categories',
+      'equipment_expense_settings',
+      'equipment_items',
+      'equipment_purchase_batches',
+      'equipment_repairs',
       'expense_categories',
       'expense_transactions',
       'payroll_run_items',
@@ -46,7 +51,7 @@ describe('database foundation', () => {
       'users',
       'vehicle_classes',
     ]);
-    expect(database.prepare('SELECT COUNT(*) AS count FROM schema_migrations').get().count).toBe(8);
+    expect(database.prepare('SELECT COUNT(*) AS count FROM schema_migrations').get().count).toBe(9);
     expect(database.prepare('SELECT COUNT(*) AS count FROM expense_categories').get().count).toBe(
       10,
     );

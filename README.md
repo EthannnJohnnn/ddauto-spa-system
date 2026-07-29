@@ -12,8 +12,8 @@ login, protected SPA shell, session security, one-time password recovery, audit 
 owner-managed business catalogs, daily service transactions with attendance and payroll previews,
 an audited tire-sales and inventory ledger, an audited canteen-sales and stock ledger, purchases
 and expenses, payroll closing, combined reporting, a dedicated attendance and payroll workspace,
-and audited Daily Close snapshots. Equipment condition tracking is planned for later work. Real
-business data is intentionally not included in the repository.
+audited Daily Close snapshots, and an individual equipment condition register with linked purchase
+and repair expenses. Real business data is intentionally not included in the repository.
 
 ## Technology
 
@@ -247,6 +247,17 @@ purchase, expense, contractor-labor, and finalized-payroll ledgers. Closing snap
 sales, costs, expenses, estimated net, transaction counts, and cash movement. Dates with employee
 payroll must have payroll closed first. A completed Daily Close locks date-sensitive source records
 until the owner reopens the day with a reason; previous snapshots remain in audit history.
+
+## Equipment condition register
+
+The **Equipment** page tracks reusable assets such as towels, hoses, machines, and cleaning tools.
+Batch entry generates a separate editable asset code for every physical item. The owner can filter
+by category and current condition, edit equipment, record repairs, and delete or restore records
+through audited archive workflows.
+
+Equipment purchases create one protected expense for the full batch. Repair costs create protected
+repair expenses. Corrections remain synchronized with their source workflow, appear exactly once in
+expenses, reports, and Daily Close, and are locked when their business date has been closed.
 
 ## Public-repository safety
 

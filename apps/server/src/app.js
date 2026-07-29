@@ -35,6 +35,9 @@ import { createReportsRouter } from './modules/reports/reports.routes.js';
 import { DailyCloseRepository } from './modules/daily-close/daily-close.repository.js';
 import { BusinessDateGuard, DailyCloseService } from './modules/daily-close/daily-close.service.js';
 import { createDailyCloseRouter } from './modules/daily-close/daily-close.routes.js';
+import { EquipmentRepository } from './modules/equipment/equipment.repository.js';
+import { EquipmentService } from './modules/equipment/equipment.service.js';
+import { createEquipmentRouter } from './modules/equipment/equipment.routes.js';
 
 const currentDirectory = path.dirname(fileURLToPath(import.meta.url));
 const webDistDirectory = path.resolve(currentDirectory, '../../web/dist');
@@ -57,6 +60,11 @@ export function createApp({ database, runtimeConfig = getRuntimeConfig() }) {
   const catalogsRouter = createCatalogsRouter(catalogsService, authModule.middleware);
   const dailyCloseRepository = new DailyCloseRepository(database);
   const businessDateGuard = new BusinessDateGuard(dailyCloseRepository);
+  const equipmentRepository = new EquipmentRepository(database);
+  const equipmentService = new EquipmentService(equipmentRepository, auditRepository, {
+    dateGuard: businessDateGuard,
+  });
+  const equipmentRouter = createEquipmentRouter(equipmentService, authModule.middleware);
   const serviceSalesRepository = new ServiceSalesRepository(database);
   const serviceSalesService = new ServiceSalesService(serviceSalesRepository, auditRepository, {
     dateGuard: businessDateGuard,
@@ -133,6 +141,7 @@ export function createApp({ database, runtimeConfig = getRuntimeConfig() }) {
   app.use('/api/v1/payroll', payrollRouter);
   app.use('/api/v1/reports', reportsRouter);
   app.use('/api/v1/daily-close', dailyCloseRouter);
+  app.use('/api/v1/equipment', equipmentRouter);
 
   if (existsSync(webDistDirectory)) {
     app.use(express.static(webDistDirectory));
