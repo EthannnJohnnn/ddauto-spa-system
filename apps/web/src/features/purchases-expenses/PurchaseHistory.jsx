@@ -11,7 +11,7 @@ export function PurchaseHistory({ purchases, purchaseSource, onSourceChange, onM
           </p>
         </div>
         <div
-          className="flex rounded-xl border border-slate-300 bg-slate-50 p-1"
+          className="flex rounded-xl border border-blue-200 bg-blue-50 p-1"
           aria-label="Purchase source"
         >
           {[
@@ -20,7 +20,7 @@ export function PurchaseHistory({ purchases, purchaseSource, onSourceChange, onM
             ['CANTEEN', 'Canteen'],
           ].map(([value, label]) => (
             <button
-              className={`rounded-lg px-3 py-2 text-sm font-semibold ${purchaseSource === value ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-white'}`}
+              className={`rounded-lg px-3 py-2 text-sm font-semibold ${purchaseSource === value ? 'bg-blue-700 text-white shadow-sm' : 'text-slate-600 hover:bg-white hover:text-blue-800'}`}
               key={value}
               onClick={() => onSourceChange(value)}
               type="button"

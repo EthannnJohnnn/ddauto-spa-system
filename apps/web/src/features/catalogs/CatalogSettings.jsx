@@ -89,7 +89,7 @@ export function CatalogSettings({ csrfToken }) {
       <div className="flex flex-col justify-between gap-5 lg:flex-row lg:items-end">
         <div>
           <p className="text-sm font-semibold text-teal-700">Owner settings</p>
-          <h2 className="mt-1 text-3xl font-bold tracking-tight text-slate-950">Business setup</h2>
+          <h2 className="ui-page-heading mt-1">Business setup</h2>
           <p className="mt-2 max-w-2xl leading-7 text-slate-600">
             Configure the reusable information that sales, attendance, payroll, and reports will
             use.
@@ -104,16 +104,12 @@ export function CatalogSettings({ csrfToken }) {
         </div>
       )}
 
-      <div className="mt-7 overflow-x-auto border-b border-slate-200">
-        <div className="flex min-w-max gap-1">
+      <div className="ui-tabs-shell">
+        <div className="ui-tabs-row">
           {tabs.map((tab) => (
             <button
               aria-selected={activeTab === tab.id}
-              className={`border-b-2 px-4 py-3 text-sm font-semibold transition ${
-                activeTab === tab.id
-                  ? 'border-teal-700 text-teal-800'
-                  : 'border-transparent text-slate-500 hover:text-slate-900'
-              }`}
+              className={`ui-tab ${activeTab === tab.id ? 'ui-tab-active' : 'ui-tab-idle'}`}
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               role="tab"

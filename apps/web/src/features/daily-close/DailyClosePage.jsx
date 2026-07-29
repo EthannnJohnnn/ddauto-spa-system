@@ -48,7 +48,7 @@ export function DailyClosePage({ csrfToken, onNavigate }) {
     setReopenTarget(null);
   }
 
-  if (loading && !dailyClose) return <PageMessage title="Loading Daily Closeâ€¦" />;
+  if (loading && !dailyClose) return <PageMessage title="Loading Daily Close…" />;
   if (!dailyClose)
     return <PageMessage detail={error} onRetry={load} title="Daily Close could not load" />;
 
@@ -60,7 +60,7 @@ export function DailyClosePage({ csrfToken, onNavigate }) {
       <div className="flex flex-col justify-between gap-5 lg:flex-row lg:items-end">
         <div>
           <p className="text-sm font-semibold text-teal-700">Daily reconciliation</p>
-          <h2 className="mt-1 text-3xl font-bold tracking-tight text-slate-950">Daily Close</h2>
+          <h2 className="ui-page-heading mt-1">Daily Close</h2>
           <p className="mt-2 max-w-3xl leading-7 text-slate-600">
             Review all sales and outflows, finalize the day, and preserve an auditable snapshot.
           </p>
@@ -157,7 +157,7 @@ export function DailyClosePage({ csrfToken, onNavigate }) {
                 onClick={closeDay}
                 type="button"
               >
-                {busy ? 'Closingâ€¦' : 'Finalize Daily Close'}
+                {busy ? 'Closing…' : 'Finalize Daily Close'}
               </button>
             </div>
           )}
@@ -245,7 +245,7 @@ function CloseHistory({ runs }) {
                 </span>
               </div>
               <p className="mt-2 text-sm text-slate-600">
-                Sales {formatPeso(run.summary.totalSalesCentavos)} Â· Cash movement{' '}
+                Sales {formatPeso(run.summary.totalSalesCentavos)} · Cash movement{' '}
                 {formatPeso(run.summary.cashMovementCentavos)}
               </p>
               {run.reopenReason && (

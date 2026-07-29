@@ -135,9 +135,7 @@ export function PurchasesExpensesPage({ csrfToken, onNavigate }) {
       <div className="flex flex-col justify-between gap-5 xl:flex-row xl:items-end">
         <div>
           <p className="text-sm font-semibold text-teal-700">Business outflows</p>
-          <h2 className="mt-1 text-3xl font-bold tracking-tight text-slate-950">
-            Purchases & expenses
-          </h2>
+          <h2 className="ui-page-heading mt-1">Purchases & expenses</h2>
           <p className="mt-2 max-w-2xl leading-7 text-slate-600">
             Review tire and canteen stock purchases separately or together, then manage operating
             expenses without losing deleted history.
@@ -168,11 +166,11 @@ export function PurchasesExpensesPage({ csrfToken, onNavigate }) {
 
       <SummaryCards purchaseSource={purchaseSource} summary={overview.summary} />
 
-      <div className="mt-6 overflow-x-auto border-b border-slate-200">
-        <div className="flex min-w-max gap-2">
+      <div className="ui-tabs-shell">
+        <div className="ui-tabs-row">
           {tabs.map(([value, label]) => (
             <button
-              className={`border-b-2 px-4 py-3 text-sm font-semibold ${activeTab === value ? 'border-teal-700 text-teal-800' : 'border-transparent text-slate-500 hover:text-slate-900'}`}
+              className={`ui-tab ${activeTab === value ? 'ui-tab-active' : 'ui-tab-idle'}`}
               key={value}
               onClick={() => {
                 setActiveTab(value);
@@ -244,7 +242,7 @@ function PeriodControls({ periodMode, anchorDate, onModeChange, onDateChange }) 
     <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
       <div>
         <span className="mb-2 block text-sm font-semibold text-slate-600">View</span>
-        <div className="flex rounded-xl border border-slate-300 bg-white p-1">
+        <div className="ui-segmented">
           {['DAILY', 'WEEKLY', 'MONTHLY'].map((mode) => (
             <button
               className={`rounded-lg px-3 py-2 text-sm font-semibold ${periodMode === mode ? 'bg-teal-700 text-white' : 'text-slate-600 hover:bg-slate-100'}`}
