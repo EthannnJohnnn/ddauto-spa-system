@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { formatPeso } from '../catalogs/catalog-formatters.js';
-import { getReportsOverview } from './reports-api.js';
+import { downloadReportsExcel, getReportsOverview } from './reports-api.js';
 
 const tabs = [
   ['OVERVIEW', 'Daily summary'],
@@ -16,6 +16,7 @@ export function ReportsPage() {
   const [report, setReport] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [exporting, setExporting] = useState(false);
   const period = useMemo(() => periodRange(periodMode, anchorDate), [periodMode, anchorDate]);
 
   const load = useCallback(async () => {
@@ -34,6 +35,19 @@ export function ReportsPage() {
     load();
   }, [load]);
 
+  const exportExcel = async () => {
+    const exportPeriod = last30DaysRange(anchorDate);
+    setExporting(true);
+    setError('');
+    try {
+      await downloadReportsExcel(exportPeriod.start, exportPeriod.end);
+    } catch (exportError) {
+      setError(exportError.message);
+    } finally {
+      setExporting(false);
+    }
+  };
+
   if (loading && !report) return <PageMessage title="Loading reports…" />;
   if (!report) return <PageMessage detail={error} onRetry={load} title="Reports could not load" />;
 
@@ -48,18 +62,32 @@ export function ReportsPage() {
             totals without duplicating purchases or payroll expenses.
           </p>
         </div>
-        <PeriodControls
-          anchorDate={anchorDate}
-          onDateChange={(value) => {
-            setReport(null);
-            setAnchorDate(value);
-          }}
-          onModeChange={(mode) => {
-            setReport(null);
-            setPeriodMode(mode);
-          }}
-          periodMode={periodMode}
-        />
+        <div className="flex flex-col gap-3">
+          <PeriodControls
+            anchorDate={anchorDate}
+            onDateChange={(value) => {
+              setReport(null);
+              setAnchorDate(value);
+            }}
+            onModeChange={(mode) => {
+              setReport(null);
+              setPeriodMode(mode);
+            }}
+            periodMode={periodMode}
+          />
+          <button
+            className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-blue-700 px-5 py-3 font-semibold text-white shadow-sm transition hover:bg-blue-800 disabled:cursor-wait disabled:opacity-65"
+            disabled={exporting}
+            onClick={exportExcel}
+            type="button"
+          >
+            <DownloadIcon />
+            {exporting ? 'Making Excel report…' : 'Download last 30 days as Excel'}
+          </button>
+          <p className="text-right text-xs text-slate-500">
+            Uses the 30 days ending {formatShortDate(anchorDate)}.
+          </p>
+        </div>
       </div>
 
       <p className="mt-3 text-sm font-medium text-slate-500">
@@ -387,6 +415,13 @@ export function periodRange(mode, anchor) {
   return { start: localDate(start), end: localDate(end) };
 }
 
+export function last30DaysRange(anchor) {
+  const end = new Date(`${anchor}T00:00:00`);
+  const start = new Date(end);
+  start.setDate(end.getDate() - 29);
+  return { start: localDate(start), end: localDate(end) };
+}
+
 function localDate(date) {
   const offset = date.getTimezoneOffset() * 60_000;
   return new Date(date.valueOf() - offset).toISOString().slice(0, 10);
@@ -410,4 +445,18 @@ function formatShortDate(value) {
 
 function titleCase(value) {
   return value[0] + value.slice(1).toLowerCase();
+}
+
+function DownloadIcon() {
+  return (
+    <svg aria-hidden="true" className="h-5 w-5" fill="none" viewBox="0 0 24 24">
+      <path
+        d="M12 3v12m0 0 4-4m-4 4-4-4M5 17v2a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-2"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="1.8"
+      />
+    </svg>
+  );
 }

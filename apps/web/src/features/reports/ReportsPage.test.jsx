@@ -1,6 +1,11 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { DailyBreakdownTable, periodRange, TransactionList } from './ReportsPage.jsx';
+import {
+  DailyBreakdownTable,
+  last30DaysRange,
+  periodRange,
+  TransactionList,
+} from './ReportsPage.jsx';
 
 describe('Phase 9 reports interface', () => {
   it('calculates daily, Monday-to-Sunday weekly, and monthly ranges', () => {
@@ -14,6 +19,10 @@ describe('Phase 9 reports interface', () => {
     });
     expect(periodRange('MONTHLY', '2026-07-22')).toEqual({
       start: '2026-07-01',
+      end: '2026-07-31',
+    });
+    expect(last30DaysRange('2026-07-31')).toEqual({
+      start: '2026-07-02',
       end: '2026-07-31',
     });
   });

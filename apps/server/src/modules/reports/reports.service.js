@@ -1,3 +1,5 @@
+import { buildReportsWorkbook } from './reports-excel.js';
+
 export class ReportsService {
   constructor(repository) {
     this.repository = repository;
@@ -51,6 +53,10 @@ export class ReportsService {
       operationalAlerts,
       activityDayCount: activeDays.length,
     };
+  }
+
+  async exportExcel({ start, end }, options) {
+    return buildReportsWorkbook(this.getOverview({ start, end }), options);
   }
 }
 
@@ -129,16 +135,24 @@ function mapInventorySales(documents, items, source) {
 
 function mapPurchases(documents, items, source) {
   const itemsByDocument = groupBy(items, (item) => item.document_id);
-  return documents.map((document) => ({
-    id: document.id,
-    source,
-    businessDate: document.business_date,
-    sequence: document.document_sequence,
-    status: document.status,
-    totalCentavos: sum(
-      (itemsByDocument.get(document.id) ?? []).map((item) => item.line_total_centavos),
-    ),
-  }));
+  return documents.map((document) => {
+    const mappedItems = (itemsByDocument.get(document.id) ?? []).map((item) => ({
+      id: item.id,
+      name: item.product_name_snapshot,
+      quantity: item.quantity,
+      unitCostCentavos: item.unit_cost_centavos_snapshot,
+      totalCentavos: item.line_total_centavos,
+    }));
+    return {
+      id: document.id,
+      source,
+      businessDate: document.business_date,
+      sequence: document.document_sequence,
+      status: document.status,
+      items: mappedItems,
+      totalCentavos: sum(mappedItems.map((item) => item.totalCentavos)),
+    };
+  });
 }
 
 function mapExpense(row) {
@@ -148,6 +162,7 @@ function mapExpense(row) {
     categoryName: row.category_name_snapshot,
     sourceType: row.source_type,
     status: row.status,
+    description: row.description,
     amountCentavos: row.amount_centavos,
   };
 }
