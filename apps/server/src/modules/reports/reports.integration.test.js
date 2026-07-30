@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import ExcelJS from 'exceljs';
 import request from 'supertest';
 import { createApp } from '../../app.js';
 import { openDatabase } from '../../db/database.js';
@@ -79,7 +80,58 @@ describe('combined reports API', () => {
     expect(response.body.operationalAlerts.equipmentAttention).toEqual([]);
     expect(response.body.activityDayCount).toBe(1);
   });
+
+  it('generates an owner-only Excel workbook for the requested 30-day period', async () => {
+    const unauthenticated = await request(app).get(
+      '/api/v1/reports/excel?start=2026-06-21&end=2026-07-20',
+    );
+    expect(unauthenticated.status).toBe(401);
+
+    const owner = await createOwnerAgent(app);
+    const invalidRange = await owner.get('/api/v1/reports/excel?start=2026-07-01&end=2026-07-31');
+    expect(invalidRange.status).toBe(400);
+
+    seedReportData(database);
+    const response = await owner
+      .get('/api/v1/reports/excel?start=2026-06-21&end=2026-07-20')
+      .buffer(true)
+      .parse(binaryParser);
+
+    expect(response.status).toBe(200);
+    expect(response.headers['content-type']).toContain(
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    );
+    expect(response.headers['content-disposition']).toContain(
+      'dd-auto-spa-report-2026-06-21-to-2026-07-20.xlsx',
+    );
+    expect(response.body.subarray(0, 2).toString()).toBe('PK');
+
+    const workbook = new ExcelJS.Workbook();
+    await workbook.xlsx.load(response.body);
+    expect(workbook.worksheets.map((sheet) => sheet.name)).toEqual([
+      'Summary',
+      'Daily Summary',
+      'Service Sales',
+      'Tire Sales',
+      'Canteen Sales',
+      'Purchases',
+      'Expenses',
+    ]);
+    expect(workbook.getWorksheet('Summary').getCell('B3').value).toBe('2026-06-21 to 2026-07-20');
+    expect(workbook.getWorksheet('Daily Summary').rowCount).toBe(34);
+    expect(workbook.getWorksheet('Daily Summary').getCell('E34').value).toMatchObject({
+      formula: 'SUM(E4:E33)',
+      result: 1600,
+    });
+    expect(workbook.getWorksheet('Service Sales').getCell('G4').value).toBe(1000);
+  });
 });
+
+function binaryParser(response, callback) {
+  const chunks = [];
+  response.on('data', (chunk) => chunks.push(chunk));
+  response.on('end', () => callback(null, Buffer.concat(chunks)));
+}
 
 async function createOwnerAgent(app) {
   const agent = request.agent(app);
