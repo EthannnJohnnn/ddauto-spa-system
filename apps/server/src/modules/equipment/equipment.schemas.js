@@ -31,7 +31,7 @@ export const equipmentCategorySchema = z
   .object({ name: z.string().trim().min(2).max(80) })
   .strict();
 export const equipmentReasonSchema = z
-  .object({ reason: z.string().trim().min(3).max(200) })
+  .object({ reason: z.string().trim().max(200).default('') })
   .strict();
 
 export const createEquipmentBatchSchema = z

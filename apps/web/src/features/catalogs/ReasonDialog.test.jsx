@@ -13,7 +13,7 @@ describe('ReasonDialog', () => {
       />,
     );
 
-    fireEvent.change(screen.getByLabelText('Reason'), {
+    fireEvent.change(screen.getByLabelText('Note (optional)'), {
       target: { value: 'No longer offered' },
     });
     fireEvent.click(screen.getByRole('button', { name: 'Confirm' }));
@@ -29,7 +29,7 @@ describe('ReasonDialog', () => {
       />,
     );
 
-    expect(screen.getByLabelText('Reason').value).toBe('');
+    expect(screen.getByLabelText('Note (optional)').value).toBe('');
     expect(screen.getByRole('button', { name: 'Confirm' }).disabled).toBe(false);
   });
 });

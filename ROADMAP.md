@@ -122,7 +122,17 @@ is complete only after its implementation is merged into `main` and `npm run che
 - Keep current condition only; do not add an inspection timeline or scheduled-maintenance system.
 - Do not add photos, barcode scanning, CSV import, or consumable-stock deduction.
 - Protect every mutation with owner authentication, CSRF validation, API-boundary validation,
-  database transactions, audit events, and reason-required archive/restore or void/restore.
+  database transactions, audit events, and confirmed archive/restore or void/restore actions.
+
+## Attendance and Period Close redesign (complete)
+
+- Replaced daily payroll closing with owner-reviewed attendance, optional final-salary overrides,
+  and running unpaid employee balances.
+- Replaced Daily Close with a custom 1–31 day Period Close that snapshots daily finance and
+  employee pay, posts protected salary and meal expenses by business date, and reopens as a whole.
+- Added Paid/Open workforce status to Daily Summary reports and Excel exports while preserving
+  immutable legacy payroll and Daily Close history.
+- Made notes and safety-confirmation reasons optional while preserving confirmations and audits.
 
 ## Completion requirements for future phases
 

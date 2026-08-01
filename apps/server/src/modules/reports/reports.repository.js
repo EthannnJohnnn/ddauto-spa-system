@@ -59,6 +59,42 @@ export class ReportsRepository {
       .all(start, end);
   }
 
+  findActivePeriodDay(businessDate) {
+    return this.database
+      .prepare(
+        `SELECT day.*, run.id AS close_id, run.start_date, run.end_date
+         FROM period_close_days day
+         JOIN period_close_runs run ON run.id = day.period_close_run_id
+         WHERE run.status = 'CLOSED' AND day.business_date = ?
+         ORDER BY run.id DESC LIMIT 1`,
+      )
+      .get(businessDate);
+  }
+
+  findLegacyPayrollDay(businessDate) {
+    return this.database
+      .prepare(
+        `SELECT run.id AS close_id, run.business_date, run.total_salary_centavos,
+                run.total_meal_centavos, COUNT(item.id) AS employee_count
+         FROM payroll_runs run
+         LEFT JOIN payroll_run_items item ON item.payroll_run_id = run.id
+         WHERE run.status = 'CLOSED' AND run.business_date = ?
+         GROUP BY run.id
+         ORDER BY run.id DESC LIMIT 1`,
+      )
+      .get(businessDate);
+  }
+
+  findLegacyDailyCloseDay(businessDate) {
+    return this.database
+      .prepare(
+        `SELECT * FROM daily_close_runs
+         WHERE status = 'CLOSED' AND business_date = ?
+         ORDER BY id DESC LIMIT 1`,
+      )
+      .get(businessDate);
+  }
+
   listTireLowStock(asOfDate) {
     return this.listLowStock(
       'tire_products',

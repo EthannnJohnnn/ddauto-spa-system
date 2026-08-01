@@ -13,5 +13,5 @@ export const closeBusinessDateSchema = z
   .object({ businessDate, closeNote: z.string().trim().max(300).default('') })
   .strict();
 export const reopenBusinessDateSchema = z
-  .object({ businessDate, reason: z.string().trim().min(3).max(200) })
+  .object({ businessDate, reason: z.string().trim().max(200).default('') })
   .strict();

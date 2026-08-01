@@ -11,8 +11,8 @@ The current foundation includes the local database, first-time owner setup, user
 login, protected SPA shell, session security, one-time password recovery, audit events, the
 owner-managed business catalogs, daily service transactions with attendance and payroll previews,
 an audited tire-sales and inventory ledger, an audited canteen-sales and stock ledger, purchases
-and expenses, payroll closing, combined reporting, a dedicated attendance and payroll workspace,
-audited Daily Close snapshots, and an individual equipment condition register with linked purchase
+and expenses, combined reporting, a dedicated attendance workspace, audited Period Close snapshots,
+and an individual equipment condition register with linked purchase
 and repair expenses. Real business data is intentionally not included in the repository.
 
 ## Technology
@@ -236,17 +236,17 @@ amount from its original source ledger:
 
 Report queries support at most 366 days at a time and require an authenticated local session.
 
-## Attendance, payroll, and Daily Close
+## Attendance and Period Close
 
-The dedicated **Attendance & payroll** page brings the existing attendance, meal, labor-share,
-fixed-rate top-up, payroll closing, reopening, and historical-run workflows together outside the
-Service sales form.
+The **Attendance** page shows daily presence, meals, calculated salary, optional owner salary
+adjustments, review state, paid history, and running unpaid totals. Salary-affecting changes clear
+the day's review automatically.
 
-The **Daily close** page reconciles one business date using the original service, tire, canteen,
-purchase, expense, contractor-labor, and finalized-payroll ledgers. Closing snapshots the day's
-sales, costs, expenses, estimated net, transaction counts, and cash movement. Dates with employee
-payroll must have payroll closed first. A completed Daily Close locks date-sensitive source records
-until the owner reopens the day with a reason; previous snapshots remain in audit history.
+The **Period Close** page finalizes any owner-selected range from 1 to 31 days. Every active
+workforce date must be reviewed first. Closing snapshots daily finance and employee pay, creates
+salary and meal expenses on their original business dates, and locks all dated records in the
+range. Reopening unlocks the whole period, voids those generated expenses, and clears its reviews.
+Legacy payroll and Daily Close history remains available and continues to lock active legacy dates.
 
 ## Equipment condition register
 
@@ -257,7 +257,7 @@ through audited archive workflows.
 
 Equipment purchases create one protected expense for the full batch. Repair costs create protected
 repair expenses. Corrections remain synchronized with their source workflow, appear exactly once in
-expenses, reports, and Daily Close, and are locked when their business date has been closed.
+expenses, reports, and Period Close, and are locked when their business date has been closed.
 
 ## Public-repository safety
 

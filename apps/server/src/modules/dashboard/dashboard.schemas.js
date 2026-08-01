@@ -21,5 +21,5 @@ export const dashboardNoteSchema = z
   .strict();
 
 export const dashboardNoteReasonSchema = z
-  .object({ reason: z.string().trim().min(3).max(200) })
+  .object({ reason: z.string().trim().max(200).default('') })
   .strict();

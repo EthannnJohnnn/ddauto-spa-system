@@ -1,201 +1,236 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { formatPeso } from '../catalogs/catalog-formatters.js';
-import { ReasonDialog } from '../catalogs/ReasonDialog.jsx';
 import { AttendancePayrollPanel } from '../service-sales/AttendancePayrollPanel.jsx';
-import { PayrollClosingPanel } from '../service-sales/PayrollClosingPanel.jsx';
-import {
-  closeDailyPayroll,
-  getDailyPayroll,
-  reopenDailyPayroll,
-} from '../service-sales/payroll-api.js';
 import { getDailyServiceSales, saveAttendance } from '../service-sales/service-sales-api.js';
+import { getOpenAttendance, setAttendanceReviewed } from './attendance-api.js';
 
 export function AttendancePayrollPage({ csrfToken }) {
+  const [through, setThrough] = useState(todayLocal());
   const [businessDate, setBusinessDate] = useState(todayLocal());
+  const [overview, setOverview] = useState(null);
   const [daily, setDaily] = useState(null);
-  const [payrollState, setPayrollState] = useState(null);
-  const [reopenTarget, setReopenTarget] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
 
   const load = useCallback(async () => {
     setLoading(true);
     setError('');
     try {
-      const [dailyData, payrollData] = await Promise.all([
+      const [overviewData, dailyData] = await Promise.all([
+        getOpenAttendance(through),
         getDailyServiceSales(businessDate),
-        getDailyPayroll(businessDate),
       ]);
+      setOverview(overviewData);
       setDaily(dailyData);
-      setPayrollState(payrollData);
     } catch (loadError) {
       setError(loadError.message);
     } finally {
       setLoading(false);
     }
-  }, [businessDate]);
+  }, [businessDate, through]);
 
   useEffect(() => {
     load();
   }, [load]);
+
+  const selectedDay = useMemo(
+    () => overview?.days.find((day) => day.businessDate === businessDate),
+    [businessDate, overview],
+  );
 
   async function updateAttendance(values) {
     await saveAttendance(values, csrfToken);
     await load();
   }
 
-  async function closePayroll(values) {
-    await closeDailyPayroll(values, csrfToken);
-    await load();
+  async function toggleReview() {
+    setBusy(true);
+    setError('');
+    try {
+      await setAttendanceReviewed(businessDate, !selectedDay?.reviewed, csrfToken);
+      await load();
+    } catch (reviewError) {
+      setError(reviewError.message);
+    } finally {
+      setBusy(false);
+    }
   }
 
-  async function reopenPayroll(reason) {
-    await reopenDailyPayroll({ businessDate, reason }, csrfToken);
-    setReopenTarget(null);
-    await load();
-  }
-
-  if (loading && !daily) return <PageMessage title="Loading attendance and payroll…" />;
-  if (!daily || !payrollState) {
-    return (
-      <PageMessage detail={error} onRetry={load} title="Attendance and payroll could not load" />
-    );
+  if (loading && !overview) return <PageMessage title="Loading attendance…" />;
+  if (!overview || !daily) {
+    return <PageMessage detail={error} onRetry={load} title="Attendance could not load" />;
   }
 
   return (
-    <div className="mx-auto max-w-7xl">
-      <div className="flex flex-col justify-between gap-5 lg:flex-row lg:items-end">
+    <div className="mx-auto max-w-7xl space-y-6">
+      <header className="flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
         <div>
-          <p className="text-sm font-semibold text-teal-700">Daily workforce</p>
-          <h2 className="ui-page-heading mt-1">Attendance & payroll</h2>
-          <p className="mt-2 max-w-2xl leading-7 text-slate-600">
-            Review attendance, meal deductions, job labor, fixed-rate top-ups, and finalized payroll
-            from one place.
-          </p>
+          <p className="text-sm font-semibold text-blue-600">Workforce</p>
+          <h2 className="ui-page-heading mt-1">Attendance</h2>
+          <p className="mt-2 text-slate-600">Check each active day before Period Close.</p>
         </div>
-        <label className="w-full sm:w-auto">
-          <span className="mb-2 block text-sm font-semibold text-slate-600">Business date</span>
+        <label>
+          <span className="mb-1 block text-xs font-semibold text-slate-500">Show through</span>
           <input
-            className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 font-semibold outline-none focus:border-teal-600 sm:w-48"
+            className="rounded-xl border border-blue-100 bg-white px-4 py-3 font-semibold outline-none focus:border-blue-500"
+            max={todayLocal()}
             onChange={(event) => {
-              setDaily(null);
-              setPayrollState(null);
+              setThrough(event.target.value);
               setBusinessDate(event.target.value);
             }}
             type="date"
-            value={businessDate}
+            value={through}
           />
         </label>
-      </div>
+      </header>
 
       {error && <ErrorMessage message={error} />}
-      <PayrollSummary daily={daily} payrollState={payrollState} />
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <SummaryCard label="Unpaid salary" value={formatPeso(overview.unpaidSalaryCentavos)} />
+        <SummaryCard label="Open meals" value={formatPeso(overview.unpaidMealCentavos)} />
+        <SummaryCard label="Employees" value={String(overview.employeeTotals.length)} />
+        <SummaryCard label="Earliest unpaid" value={overview.earliestUnpaidDate ?? 'None'} />
+      </div>
 
-      <div className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,1.25fr)_minmax(22rem,0.75fr)]">
+      <section className="overflow-hidden rounded-2xl border border-blue-100 bg-white shadow-sm">
+        <div className="border-b border-blue-100 px-5 py-4">
+          <h3 className="font-bold text-slate-950">Daily review</h3>
+        </div>
+        <div className="max-h-72 overflow-auto">
+          <table className="w-full min-w-[44rem] text-left text-sm">
+            <thead className="sticky top-0 bg-blue-50 text-xs uppercase tracking-wide text-blue-700">
+              <tr>
+                <th className="px-4 py-3">Date</th>
+                <th className="px-4 py-3">Present</th>
+                <th className="px-4 py-3">Salary</th>
+                <th className="px-4 py-3">Meals</th>
+                <th className="px-4 py-3">Status</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {[...overview.days].reverse().map((day) => (
+                <tr
+                  className={`cursor-pointer hover:bg-blue-50 ${day.businessDate === businessDate ? 'bg-blue-50/80' : ''}`}
+                  key={day.businessDate}
+                  onClick={() => setBusinessDate(day.businessDate)}
+                >
+                  <td className="px-4 py-3 font-semibold">{day.businessDate}</td>
+                  <td className="px-4 py-3">{day.presentEmployeeCount}</td>
+                  <td className="px-4 py-3 font-semibold">{formatPeso(day.salaryCentavos)}</td>
+                  <td className="px-4 py-3">{formatPeso(day.mealCentavos)}</td>
+                  <td className="px-4 py-3">
+                    <StatusBadge day={day} />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.35fr)_minmax(20rem,0.65fr)]">
         <AttendancePayrollPanel
           attendance={daily.attendance}
           businessDate={businessDate}
-          locked={payrollState.isClosed}
+          locked={selectedDay?.status === 'PAID'}
           onSave={updateAttendance}
           payroll={daily.payroll}
         />
-        <div className="space-y-6">
-          <PayrollClosingPanel
-            businessDate={businessDate}
-            key={businessDate}
-            onClose={closePayroll}
-            onRequestReopen={() =>
-              setReopenTarget({
-                isActive: true,
-                activeVerb: 'Reopen',
-                label: `payroll for ${businessDate}`,
-              })
-            }
-            payrollState={payrollState}
-          />
-          <PayrollHistory runs={payrollState.runs} />
-        </div>
-      </div>
-
-      <ReasonDialog
-        onCancel={() => setReopenTarget(null)}
-        onConfirm={reopenPayroll}
-        target={reopenTarget}
-      />
-    </div>
-  );
-}
-
-export function PayrollSummary({ daily, payrollState }) {
-  const activeRun = payrollState.runs.find((run) => run.status === 'CLOSED');
-  const cards = [
-    ['Present employees', String(daily.attendance.filter((entry) => entry.isPresent).length)],
-    ['Payroll', formatPeso(activeRun?.totalSalaryCentavos ?? daily.summary.totalPayrollCentavos)],
-    ['Staff meals', formatPeso(activeRun?.totalMealCentavos ?? daily.summary.mealCostCentavos)],
-    ['Status', payrollState.isClosed ? 'Closed' : 'Open'],
-  ];
-  return (
-    <div className="mt-7 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-      {cards.map(([label, value]) => (
-        <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm" key={label}>
-          <p className="text-sm font-medium text-slate-500">{label}</p>
-          <p className="mt-3 text-2xl font-bold text-slate-950">{value}</p>
-        </article>
-      ))}
-    </div>
-  );
-}
-
-function PayrollHistory({ runs }) {
-  return (
-    <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-      <div className="border-b border-slate-200 px-5 py-4">
-        <h3 className="font-bold text-slate-950">Payroll history</h3>
-        <p className="mt-1 text-sm text-slate-500">Reopened runs remain visible for audit.</p>
-      </div>
-      {runs.length === 0 ? (
-        <p className="p-6 text-center text-sm text-slate-500">No payroll run for this date.</p>
-      ) : (
-        <div className="divide-y divide-slate-100">
-          {runs.map((run) => (
-            <article className="p-4" key={run.id}>
-              <div className="flex items-center justify-between gap-3">
-                <p className="font-bold text-slate-900">Run #{run.id}</p>
-                <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-700">
-                  {run.status === 'CLOSED' ? 'Closed' : 'Reopened'}
-                </span>
+        <aside className="space-y-5">
+          <section className="rounded-2xl border border-blue-100 bg-white p-5 shadow-sm">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <h3 className="font-bold">{businessDate}</h3>
+                <p className="mt-1 text-sm text-slate-500">
+                  Salary {formatPeso(selectedDay?.salaryCentavos ?? 0)}
+                </p>
               </div>
-              <p className="mt-2 text-sm text-slate-600">
-                {formatPeso(run.totalSalaryCentavos)} payroll · {formatPeso(run.totalMealCentavos)}{' '}
-                meals
+              {selectedDay && <StatusBadge day={selectedDay} />}
+            </div>
+            {selectedDay?.status === 'OPEN' && selectedDay.requiresReview && (
+              <button
+                className={`mt-5 w-full rounded-xl px-4 py-3 font-bold ${selectedDay.reviewed ? 'border border-blue-200 bg-white text-blue-700' : 'bg-blue-600 text-white'}`}
+                disabled={busy}
+                onClick={toggleReview}
+                type="button"
+              >
+                {selectedDay.reviewed ? 'Clear review' : 'Mark Reviewed'}
+              </button>
+            )}
+            {selectedDay?.status === 'PAID' && (
+              <p className="mt-4 text-sm text-slate-600">
+                Included in a closed period. Reopen it to make changes.
               </p>
-              {run.reopenReason && (
-                <p className="mt-2 text-xs text-amber-700">Reason: {run.reopenReason}</p>
+            )}
+          </section>
+          <section className="rounded-2xl border border-blue-100 bg-white p-5 shadow-sm">
+            <h3 className="font-bold">Running unpaid totals</h3>
+            <div className="mt-3 divide-y divide-slate-100">
+              {overview.employeeTotals.map((employee) => (
+                <div className="flex justify-between gap-3 py-3 text-sm" key={employee.employeeId}>
+                  <span>
+                    {employee.employeeName} · {employee.dayCount} day(s)
+                  </span>
+                  <strong>{formatPeso(employee.unpaidSalaryCentavos)}</strong>
+                </div>
+              ))}
+              {overview.employeeTotals.length === 0 && (
+                <p className="py-4 text-sm text-slate-500">No unpaid salary.</p>
               )}
-            </article>
-          ))}
-        </div>
-      )}
-    </section>
+            </div>
+          </section>
+        </aside>
+      </div>
+    </div>
+  );
+}
+
+export function StatusBadge({ day }) {
+  const label =
+    day.status === 'PAID'
+      ? 'Paid'
+      : day.reviewed
+        ? 'Reviewed'
+        : day.requiresReview
+          ? 'Needs review'
+          : 'No activity';
+  const color =
+    day.status === 'PAID'
+      ? 'bg-emerald-100 text-emerald-800'
+      : day.reviewed
+        ? 'bg-blue-100 text-blue-800'
+        : day.requiresReview
+          ? 'bg-amber-100 text-amber-800'
+          : 'bg-slate-100 text-slate-500';
+  return <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${color}`}>{label}</span>;
+}
+
+function SummaryCard({ label, value }) {
+  return (
+    <article className="rounded-2xl border border-blue-100 bg-white p-5 shadow-sm">
+      <p className="text-sm text-slate-500">{label}</p>
+      <p className="mt-2 text-xl font-bold text-blue-950">{value}</p>
+    </article>
   );
 }
 
 function ErrorMessage({ message }) {
   return (
-    <div className="mt-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+    <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
       {message}
-    </div>
+    </p>
   );
 }
 
 function PageMessage({ title, detail, onRetry }) {
   return (
-    <section className="mx-auto max-w-lg rounded-2xl border border-slate-200 bg-white p-10 text-center shadow-sm">
+    <section className="mx-auto max-w-lg rounded-2xl border border-blue-100 bg-white p-10 text-center shadow-sm">
       <h2 className="text-xl font-bold">{title}</h2>
       {detail && <p className="mt-2 text-slate-600">{detail}</p>}
       {onRetry && (
         <button
-          className="mt-5 rounded-xl bg-teal-700 px-5 py-3 font-semibold text-white"
+          className="mt-5 rounded-xl bg-blue-600 px-5 py-3 font-semibold text-white"
           onClick={onRetry}
           type="button"
         >

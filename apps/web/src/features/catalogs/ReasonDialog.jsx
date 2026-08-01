@@ -17,11 +17,6 @@ export function ReasonDialog({ target, onCancel, onConfirm }) {
 
   async function handleSubmit(event) {
     event.preventDefault();
-    if (reason.trim().length < 3) {
-      setError('Please enter a short reason.');
-      return;
-    }
-
     setBusy(true);
     setError('');
     try {
@@ -49,16 +44,16 @@ export function ReasonDialog({ target, onCancel, onConfirm }) {
           {target.label}?
         </h2>
         <p className="mt-3 leading-6 text-slate-600">
-          The item will remain in history. Explain why its status is changing.
+          The item will remain in history. You may add a note for the audit record.
         </p>
         <label className="mt-5 block">
-          <span className="mb-2 block text-sm font-semibold text-slate-700">Reason</span>
+          <span className="mb-2 block text-sm font-semibold text-slate-700">Note (optional)</span>
           <textarea
             autoFocus
             className="min-h-24 w-full resize-none rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-teal-600 focus:ring-4 focus:ring-teal-600/10"
             maxLength="200"
             onChange={(event) => setReason(event.target.value)}
-            placeholder="Example: No longer offered"
+            placeholder="Add context if needed"
             value={reason}
           />
         </label>

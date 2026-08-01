@@ -286,7 +286,7 @@ export function TireDocumentForm({
         </button>
 
         <label className="mt-4 block">
-          <FieldLabel>{isAdjustment ? 'Adjustment reason' : 'Notes'}</FieldLabel>
+          <FieldLabel>Notes (optional)</FieldLabel>
           <textarea
             className="min-h-20 w-full resize-none rounded-xl border border-slate-300 px-3 py-2.5 outline-none focus:border-teal-600"
             maxLength="300"
@@ -296,7 +296,6 @@ export function TireDocumentForm({
                 ? 'Required: explain the physical count, damage, or correction'
                 : 'Optional note'
             }
-            required={isAdjustment}
             value={notes}
           />
         </label>

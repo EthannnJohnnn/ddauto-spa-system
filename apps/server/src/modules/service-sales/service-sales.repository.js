@@ -192,7 +192,9 @@ export class ServiceSalesRepository {
           COALESCE(da.fixed_daily_rate_centavos_snapshot, e.fixed_daily_rate_centavos)
             AS fixed_daily_rate_centavos_snapshot,
           COALESCE(da.is_present, 0) AS is_present,
-          COALESCE(da.meal_cost_centavos, 0) AS meal_cost_centavos
+          COALESCE(da.meal_cost_centavos, 0) AS meal_cost_centavos,
+          da.salary_override_centavos,
+          da.salary_override_at
          FROM employees e
          LEFT JOIN daily_attendance da
            ON da.employee_id = e.id AND da.business_date = ?
@@ -202,19 +204,31 @@ export class ServiceSalesRepository {
       .all(businessDate);
   }
 
-  upsertAttendance({ businessDate, employee, isPresent, mealCostCentavos, actorUserId, now }) {
+  upsertAttendance({
+    businessDate,
+    employee,
+    isPresent,
+    mealCostCentavos,
+    salaryOverrideCentavos,
+    actorUserId,
+    now,
+  }) {
     this.database
       .prepare(
         `INSERT INTO daily_attendance (
           business_date, employee_id, employee_name_snapshot,
           fixed_daily_rate_centavos_snapshot, is_present, meal_cost_centavos,
+          salary_override_centavos, salary_override_by_user_id, salary_override_at,
           updated_by_user_id, created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ON CONFLICT (business_date, employee_id) DO UPDATE SET
           employee_name_snapshot = excluded.employee_name_snapshot,
           fixed_daily_rate_centavos_snapshot = excluded.fixed_daily_rate_centavos_snapshot,
           is_present = excluded.is_present,
           meal_cost_centavos = excluded.meal_cost_centavos,
+          salary_override_centavos = excluded.salary_override_centavos,
+          salary_override_by_user_id = excluded.salary_override_by_user_id,
+          salary_override_at = excluded.salary_override_at,
           updated_by_user_id = excluded.updated_by_user_id,
           updated_at = excluded.updated_at`,
       )
@@ -225,10 +239,19 @@ export class ServiceSalesRepository {
         employee.fixed_daily_rate_centavos,
         Number(isPresent),
         isPresent ? mealCostCentavos : 0,
+        salaryOverrideCentavos,
+        salaryOverrideCentavos === null ? null : actorUserId,
+        salaryOverrideCentavos === null ? null : now,
         actorUserId,
         now,
         now,
       );
+  }
+
+  clearAttendanceReview(businessDate) {
+    this.database
+      .prepare('DELETE FROM attendance_day_reviews WHERE business_date = ?')
+      .run(businessDate);
   }
 
   ensureAttendancePresent({ businessDate, employee, actorUserId, now }) {

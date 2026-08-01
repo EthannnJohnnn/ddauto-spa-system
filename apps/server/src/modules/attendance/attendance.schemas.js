@@ -5,20 +5,10 @@ const businessDate = z
   .regex(/^\d{4}-\d{2}-\d{2}$/, 'Use a date in YYYY-MM-DD format.')
   .refine(isRealDate, 'Enter a valid calendar date.');
 
-export const dailyPayrollQuerySchema = z.object({ date: businessDate }).strict();
+export const attendanceOpenQuerySchema = z.object({ through: businessDate }).strict();
 
-export const closePayrollSchema = z
-  .object({
-    businessDate,
-    closeNote: z.string().trim().max(300).default(''),
-  })
-  .strict();
-
-export const reopenPayrollSchema = z
-  .object({
-    businessDate,
-    reason: z.string().trim().max(200).default(''),
-  })
+export const attendanceReviewSchema = z
+  .object({ businessDate, reviewed: z.boolean().default(true) })
   .strict();
 
 function isRealDate(value) {

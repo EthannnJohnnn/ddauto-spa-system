@@ -21,6 +21,7 @@ describe('database foundation', () => {
       .map((row) => row.name);
 
     expect(tables).toEqual([
+      'attendance_day_reviews',
       'audit_events',
       'canteen_inventory_document_items',
       'canteen_inventory_documents',
@@ -38,6 +39,9 @@ describe('database foundation', () => {
       'expense_transactions',
       'payroll_run_items',
       'payroll_runs',
+      'period_close_days',
+      'period_close_employee_days',
+      'period_close_runs',
       'recovery_codes',
       'schema_migrations',
       'service_prices',
@@ -53,7 +57,7 @@ describe('database foundation', () => {
       'vehicle_classes',
     ]);
     expect(database.prepare('SELECT COUNT(*) AS count FROM schema_migrations').get().count).toBe(
-      10,
+      11,
     );
     expect(database.prepare('SELECT COUNT(*) AS count FROM expense_categories').get().count).toBe(
       10,

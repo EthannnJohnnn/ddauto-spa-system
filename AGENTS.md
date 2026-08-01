@@ -46,7 +46,7 @@
 - Treat ordinary, specialist, and external-contractor labor rules as explicit service data, not
   name-based guesses.
 - Keep archived employees, vehicle classes, and services available for historical references.
-- Require an owner-supplied reason when catalog records are archived or restored.
+- Confirm catalog archive/restore actions and record an optional owner note in audit history.
 
 ## Service transaction and labor rules
 
@@ -62,7 +62,7 @@
   his calculated job labor is below the fixed rate; never add the full fixed rate on top of labor.
 - Assigned regular employees are automatically present. The default meal deduction is 5,000
   centavos for each present employee and may be adjusted by the owner.
-- Require an owner-supplied reason when a service ticket is voided or restored, and preserve its
+- Confirm service ticket void/restore actions, accept an optional note, and preserve their
   audit history.
 
 ## Canteen inventory rules
@@ -71,7 +71,7 @@
 - Classify products as drinks, snacks, or other and allow optional beginning inventory.
 - Snapshot item name, category, unit cost, and selling price on every stock document.
 - Reject create, edit, void, or restore actions that make stock negative on any business date.
-- Require an owner-supplied reason when products are archived/restored or documents are
+- Confirm product archive/restore and document void/restore actions, accept an optional note, and
   voided/restored, and preserve audit history.
 
 ## Tire inventory rules
@@ -80,7 +80,7 @@
   product sale reduces tire inventory.
 - Derive stock from active immutable ledger documents: beginning inventory and purchases add stock,
   sales subtract stock, and adjustments use a signed quantity.
-- Require a reason in the notes for every stock adjustment.
+- Allow an optional note on stock adjustments.
 - Snapshot the product name, category, tube type, size, quantity, cost, selling price, stock delta,
   and line total on every tire inventory document item.
 - Reject any create, edit, void, or restore action that would produce negative end-of-day stock on
@@ -88,7 +88,7 @@
 - Permit at most one active beginning-inventory entry per tire product.
 - Use the product's current unit cost for current inventory valuation and snapshot that cost on a
   sale for estimated historical gross profit.
-- Archive/restore tire products and void/restore inventory documents with owner-supplied reasons;
+- Archive/restore tire products and void/restore inventory documents with confirmation and an optional note;
   never hard-delete them or their audit history.
 
 ## Purchase and expense rules
@@ -100,7 +100,7 @@
 - Keep expense categories owner-managed and available for historical references after archival.
 - Reserve payroll and staff-meal source types for automatic workflows; manual expense endpoints
   must not modify system-generated expenses.
-- Require an owner-supplied reason when expense categories are archived/restored or expenses are
+- Confirm expense category archive/restore and expense void/restore actions with an optional note;
   voided/restored, and preserve audit history.
 
 ## Equipment rules
@@ -108,14 +108,24 @@
 - Track every reusable physical item individually; batch entry may generate multiple individually
   coded records.
 - Use Good, Needs Attention, Under Repair, and Damaged as the fixed active conditions. Retirement
-  uses archive/restore with an owner-supplied reason.
+  uses confirmed archive/restore with an optional note.
 - Keep equipment categories owner-managed and preserve archived categories for historical use.
 - Treat equipment purchase batches and repairs as the source of truth for their protected generated
   expenses; manual expense endpoints must not modify them.
 - Synchronize purchase and repair corrections with their linked expenses, and never remove past
   expenses merely because equipment is archived.
-- Block dated purchase and repair cost changes after Daily Close until the business date is
+- Block dated purchase and repair cost changes after Period Close until the business date is
   reopened.
+
+## Attendance and Period Close rules
+
+- Daily final salary is the owner override when present, otherwise calculated salary.
+- Salary-affecting edits clear the day's attendance review.
+- Period Close accepts an inclusive owner-selected range of 1 to 31 non-future days.
+- Every date with attendance, salary, or service activity must be reviewed before closing.
+- Active Period Close ranges lock every dated business record in their range.
+- Reopening applies to the whole period, voids its salary and meal expenses, and clears reviews.
+- Keep legacy payroll and Daily Close tables immutable and continue honoring their date locks.
 
 ## Completion standard
 
