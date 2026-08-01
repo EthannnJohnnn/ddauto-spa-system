@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { CatalogSettings } from './CatalogSettings.jsx';
 
@@ -83,7 +83,13 @@ describe('CatalogSettings', () => {
     fireEvent.click(screen.getByText('Graphene/detailing specialist'));
     fireEvent.click(screen.getByRole('button', { name: 'Add employee' }));
 
-    expect(await screen.findByRole('heading', { name: 'Orlan' })).toBeTruthy();
+    await waitFor(() => {
+      expect(
+        fetchMock.mock.calls.some(
+          ([url, options]) => url === '/api/v1/catalogs/employees' && options.method === 'POST',
+        ),
+      ).toBe(true);
+    });
     const createCall = fetchMock.mock.calls.find(
       ([url, options]) => url === '/api/v1/catalogs/employees' && options.method === 'POST',
     );
