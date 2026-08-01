@@ -42,6 +42,11 @@ export function DashboardShell({ user, csrfToken, onLogout }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const activeItem = findNavigationItem(activeModule);
 
+  useEffect(() => {
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+  }, [activeModule]);
+
   return (
     <div className="min-h-screen bg-[#f3f6f8] text-slate-950">
       {menuOpen && (

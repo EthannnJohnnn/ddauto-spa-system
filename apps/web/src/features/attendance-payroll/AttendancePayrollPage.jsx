@@ -68,7 +68,6 @@ export function AttendancePayrollPage({ csrfToken }) {
         <div>
           <p className="text-sm font-semibold text-blue-600">Workforce</p>
           <h2 className="ui-page-heading mt-1">Attendance</h2>
-          <p className="mt-2 text-slate-600">Check each active day before Period Close.</p>
         </div>
         <label>
           <span className="mb-1 block text-xs font-semibold text-slate-500">Show through</span>

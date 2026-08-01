@@ -35,6 +35,7 @@ export function EquipmentPage({ csrfToken }) {
   const [editingBatch, setEditingBatch] = useState(null);
   const [repairTarget, setRepairTarget] = useState(null);
   const [editingRepair, setEditingRepair] = useState(null);
+  const [showAddForm, setShowAddForm] = useState(false);
   const [reasonTarget, setReasonTarget] = useState(null);
   const [error, setError] = useState('');
 
@@ -73,13 +74,20 @@ export function EquipmentPage({ csrfToken }) {
   if (!overview) return <PageMessage title="Loading equipment…" detail={error} />;
   return (
     <div className="mx-auto max-w-7xl">
-      <div>
-        <p className="text-sm font-semibold text-teal-700">Reusable asset register</p>
-        <h2 className="ui-page-heading mt-1">Equipment</h2>
-        <p className="mt-2 max-w-3xl leading-7 text-slate-600">
-          Track every towel, hose, machine, and tool individually, along with its current condition
-          and related costs.
-        </p>
+      <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+        <div>
+          <p className="text-sm font-semibold text-teal-700">Reusable asset register</p>
+          <h2 className="ui-page-heading mt-1">Equipment</h2>
+        </div>
+        {tab === 'EQUIPMENT' && (
+          <button
+            className="rounded-xl bg-teal-700 px-5 py-3 font-bold text-white"
+            onClick={() => setShowAddForm((current) => !current)}
+            type="button"
+          >
+            {showAddForm ? 'Close form' : 'Add equipment'}
+          </button>
+        )}
       </div>
       {error && (
         <div className="mt-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
@@ -96,7 +104,10 @@ export function EquipmentPage({ csrfToken }) {
           <button
             className={`ui-tab ${tab === value ? 'ui-tab-active' : 'ui-tab-idle'}`}
             key={value}
-            onClick={() => setTab(value)}
+            onClick={() => {
+              setTab(value);
+              if (value !== 'EQUIPMENT') setShowAddForm(false);
+            }}
             type="button"
           >
             {label}
@@ -105,10 +116,16 @@ export function EquipmentPage({ csrfToken }) {
       </div>
       {tab === 'EQUIPMENT' && (
         <div className="mt-6 space-y-6">
-          <BatchForm
-            categories={overview.categories}
-            onSave={(values) => refresh(() => createEquipmentBatch(values, csrfToken))}
-          />
+          {showAddForm && (
+            <BatchForm
+              categories={overview.categories}
+              onCancel={() => setShowAddForm(false)}
+              onSave={async (values) => {
+                await refresh(() => createEquipmentBatch(values, csrfToken));
+                setShowAddForm(false);
+              }}
+            />
+          )}
           {editingItem && (
             <ItemForm
               categories={overview.categories}
@@ -231,7 +248,7 @@ export function Summary({ summary }) {
   );
 }
 
-export function BatchForm({ categories, onSave }) {
+export function BatchForm({ categories, onSave, onCancel }) {
   const today = todayLocal();
   const defaultCategoryId = categories.find((category) => category.isActive)?.id;
   const [form, setForm] = useState({
@@ -251,7 +268,7 @@ export function BatchForm({ categories, onSave }) {
   return (
     <FormCard
       title="Add equipment"
-      subtitle="One batch entry creates a separate asset record and code for every item."
+      onCancel={onCancel}
       onSubmit={() =>
         onSave({
           ...form,
@@ -495,13 +512,21 @@ function Filters({ filters, onChange, categories }) {
 function EquipmentList({ items, onEdit, onEditBatch, onRepair, onArchive }) {
   return (
     <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-      <div className="border-b border-slate-200 px-5 py-4">
+      <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
         <h3 className="font-bold">Equipment register</h3>
+        <span className="rounded-full bg-slate-100 px-3 py-1 text-sm font-semibold text-slate-600">
+          {items.length} items
+        </span>
       </div>
       {items.length === 0 ? (
         <p className="p-8 text-center text-slate-500">No equipment matches these filters.</p>
       ) : (
-        <div className="divide-y divide-slate-100">
+        <div
+          aria-label="Equipment register list"
+          className="ui-scroll-list divide-y divide-slate-100"
+          role="region"
+          tabIndex="0"
+        >
           {items.map((item) => (
             <article
               className={`p-5 ${item.isActive ? '' : 'bg-slate-50 opacity-70'}`}
@@ -578,7 +603,12 @@ function CategoryPanel({ categories, onCreate, onEdit, onStatus }) {
           {editing ? 'Save' : 'Add'}
         </button>
       </form>
-      <div className="mt-5 divide-y divide-slate-100">
+      <div
+        aria-label="Equipment categories list"
+        className="ui-scroll-list mt-5 divide-y divide-slate-100"
+        role="region"
+        tabIndex="0"
+      >
         {categories.map((c) => (
           <div className="flex items-center justify-between py-3" key={c.id}>
             <span className={c.isActive ? 'font-semibold' : 'text-slate-400'}>{c.name}</span>
@@ -603,15 +633,22 @@ function RepairList({ repairs, onEdit, onStatus }) {
   return (
     <section className="mt-6 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
       <div className="border-b border-slate-200 px-5 py-4">
-        <h3 className="font-bold">Repair costs</h3>
-        <p className="mt-1 text-sm text-slate-500">
-          Each active record has a protected linked expense.
-        </p>
+        <div className="flex items-center justify-between">
+          <h3 className="font-bold">Repair costs</h3>
+          <span className="rounded-full bg-slate-100 px-3 py-1 text-sm font-semibold text-slate-600">
+            {repairs.length} records
+          </span>
+        </div>
       </div>
       {repairs.length === 0 ? (
         <p className="p-8 text-center text-slate-500">No repairs recorded.</p>
       ) : (
-        <div className="divide-y divide-slate-100">
+        <div
+          aria-label="Equipment repair history"
+          className="ui-scroll-list divide-y divide-slate-100"
+          role="region"
+          tabIndex="0"
+        >
           {repairs.map((r) => (
             <article className="flex flex-col justify-between gap-3 p-5 sm:flex-row" key={r.id}>
               <div>
@@ -639,7 +676,7 @@ function RepairList({ repairs, onEdit, onStatus }) {
   );
 }
 
-function FormCard({ title, subtitle, children, onSubmit, onCancel }) {
+function FormCard({ title, children, onSubmit, onCancel }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   return (
@@ -659,7 +696,6 @@ function FormCard({ title, subtitle, children, onSubmit, onCancel }) {
       }}
     >
       <h3 className="font-bold text-slate-950">{title}</h3>
-      {subtitle && <p className="mt-1 text-sm text-slate-500">{subtitle}</p>}
       <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{children}</div>
       {error && <p className="mt-3 text-sm text-red-700">{error}</p>}
       <div className="mt-4 flex gap-3">

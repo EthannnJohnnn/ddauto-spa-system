@@ -90,10 +90,6 @@ export function CatalogSettings({ csrfToken }) {
         <div>
           <p className="text-sm font-semibold text-teal-700">Owner settings</p>
           <h2 className="ui-page-heading mt-1">Business setup</h2>
-          <p className="mt-2 max-w-2xl leading-7 text-slate-600">
-            Configure the reusable information that sales, attendance, payroll, and reports will
-            use.
-          </p>
         </div>
         <SetupStatus progress={catalogs.setupProgress} onSelect={setActiveTab} />
       </div>

@@ -4,12 +4,7 @@ export function PurchaseHistory({ purchases, purchaseSource, onSourceChange, onM
   return (
     <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
       <div className="flex flex-col justify-between gap-4 border-b border-slate-200 px-5 py-4 sm:flex-row sm:items-center">
-        <div>
-          <h3 className="font-bold text-slate-950">Purchase history</h3>
-          <p className="mt-1 text-sm text-slate-500">
-            Inventory purchases are shown once from their original ledger.
-          </p>
-        </div>
+        <h3 className="font-bold text-slate-950">Purchase history</h3>
         <div
           className="flex rounded-xl border border-blue-200 bg-blue-50 p-1"
           aria-label="Purchase source"
@@ -39,7 +34,12 @@ export function PurchaseHistory({ purchases, purchaseSource, onSourceChange, onM
           </p>
         </div>
       ) : (
-        <div className="divide-y divide-slate-100">
+        <div
+          aria-label="Purchase history list"
+          className="ui-scroll-list divide-y divide-slate-100"
+          role="region"
+          tabIndex="0"
+        >
           {purchases.map((purchase) => (
             <article
               className={`p-5 ${purchase.status === 'VOIDED' ? 'bg-slate-50 opacity-65' : ''}`}

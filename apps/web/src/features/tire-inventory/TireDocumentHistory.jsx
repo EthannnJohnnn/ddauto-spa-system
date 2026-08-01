@@ -4,12 +4,7 @@ export function TireDocumentHistory({ documents, onEdit, onStatus }) {
   return (
     <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
       <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
-        <div>
-          <h3 className="font-bold text-slate-950">Inventory document history</h3>
-          <p className="mt-1 text-sm text-slate-500">
-            Purchases, sales, beginning stock, and adjustments for the selected period.
-          </p>
-        </div>
+        <h3 className="font-bold text-slate-950">Inventory history</h3>
         <span className="rounded-full bg-slate-100 px-3 py-1 text-sm font-semibold text-slate-600">
           {documents.length} documents
         </span>
@@ -23,7 +18,12 @@ export function TireDocumentHistory({ documents, onEdit, onStatus }) {
           </p>
         </div>
       ) : (
-        <div className="divide-y divide-slate-100">
+        <div
+          aria-label="Tire inventory history"
+          className="ui-scroll-list divide-y divide-slate-100"
+          role="region"
+          tabIndex="0"
+        >
           {documents.map((document) => (
             <article
               className={`p-5 ${document.status === 'VOIDED' ? 'bg-slate-50 opacity-65' : ''}`}

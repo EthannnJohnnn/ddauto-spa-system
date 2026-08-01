@@ -57,10 +57,6 @@ export function ReportsPage() {
         <div>
           <p className="text-sm font-semibold text-teal-700">Owner reporting</p>
           <h2 className="ui-page-heading mt-1">Combined business reports</h2>
-          <p className="mt-2 max-w-3xl leading-7 text-slate-600">
-            Compare services, tire sales, and canteen sales separately, then review the combined
-            totals without duplicating purchases or payroll expenses.
-          </p>
         </div>
         <div className="flex flex-col gap-3">
           <PeriodControls
@@ -227,11 +223,15 @@ export function DailyBreakdownTable({ days }) {
     <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
       <div className="border-b border-slate-200 px-5 py-4">
         <h3 className="font-bold text-slate-950">Daily combined summary</h3>
-        <p className="mt-1 text-sm text-slate-500">Finance and workforce by day.</p>
       </div>
-      <div className="overflow-x-auto">
+      <div
+        aria-label="Daily combined report"
+        className="ui-scroll-list overflow-x-auto"
+        role="region"
+        tabIndex="0"
+      >
         <table className="min-w-full text-left text-sm">
-          <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
+          <thead className="sticky top-0 z-10 bg-slate-50 text-xs uppercase tracking-wide text-slate-500 shadow-[0_1px_0_0_#e2e8f0]">
             <tr>
               {[
                 'Date',
@@ -299,10 +299,7 @@ export function TransactionList({ transactions, source }) {
   return (
     <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
       <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
-        <div>
-          <h3 className="font-bold capitalize text-slate-950">{label} transactions</h3>
-          <p className="mt-1 text-sm text-slate-500">Individual records for the selected period.</p>
-        </div>
+        <h3 className="font-bold capitalize text-slate-950">{label} transactions</h3>
         <span className="rounded-full bg-slate-100 px-3 py-1 text-sm font-semibold text-slate-600">
           {transactions.length} recorded
         </span>
@@ -310,7 +307,12 @@ export function TransactionList({ transactions, source }) {
       {transactions.length === 0 ? (
         <p className="p-10 text-center text-sm text-slate-500">No {label} sales in this period.</p>
       ) : (
-        <div className="divide-y divide-slate-100">
+        <div
+          aria-label={`${label} transactions list`}
+          className="ui-scroll-list divide-y divide-slate-100"
+          role="region"
+          tabIndex="0"
+        >
           {transactions.map((transaction) => (
             <article
               className={`p-5 ${transaction.status === 'VOIDED' ? 'bg-slate-50 opacity-65' : ''}`}

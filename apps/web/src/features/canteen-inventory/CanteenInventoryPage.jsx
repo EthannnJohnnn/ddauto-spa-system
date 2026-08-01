@@ -123,10 +123,6 @@ export function CanteenInventoryPage({ csrfToken }) {
         <div>
           <p className="text-sm font-semibold text-teal-700">Shop operations</p>
           <h2 className="ui-page-heading mt-1">Canteen & inventory</h2>
-          <p className="mt-2 max-w-2xl leading-7 text-slate-600">
-            Track drinks and snacks from beginning stock through purchases, sales, adjustments, and
-            current balances.
-          </p>
         </div>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
           <div>
