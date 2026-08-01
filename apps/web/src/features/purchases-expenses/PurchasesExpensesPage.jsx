@@ -136,10 +136,6 @@ export function PurchasesExpensesPage({ csrfToken, onNavigate }) {
         <div>
           <p className="text-sm font-semibold text-teal-700">Business outflows</p>
           <h2 className="ui-page-heading mt-1">Purchases & expenses</h2>
-          <p className="mt-2 max-w-2xl leading-7 text-slate-600">
-            Review tire and canteen stock purchases separately or together, then manage operating
-            expenses without losing deleted history.
-          </p>
         </div>
         <PeriodControls
           anchorDate={anchorDate}

@@ -66,6 +66,36 @@ describe('Phase 5 tire inventory forms', () => {
     ]);
   });
 
+  it('keeps a long tire inventory scrollable and searchable', () => {
+    const products = Array.from({ length: 40 }, (_, index) => ({
+      ...product,
+      id: index + 1,
+      name: `Tire ${index + 1}`,
+      size: `Size ${index + 1}`,
+    }));
+    render(
+      <TireProductsPanel
+        businessDate="2026-07-01"
+        onSave={() => {}}
+        onStatus={() => {}}
+        products={products}
+      />,
+    );
+
+    expect(screen.getByRole('region', { name: 'Tire inventory list' })).toHaveClass(
+      'ui-scroll-list',
+    );
+    expect(screen.getByText('40 products')).toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText('Search tire inventory'), {
+      target: { value: 'Size 40' },
+    });
+
+    expect(screen.getByText('1 of 40 products')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Tire 40' })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Tire 1' })).not.toBeInTheDocument();
+  });
+
   it('auto-fills a tire sale price and submits a stock-reducing sale item', async () => {
     const onSave = vi.fn().mockResolvedValue(undefined);
     render(

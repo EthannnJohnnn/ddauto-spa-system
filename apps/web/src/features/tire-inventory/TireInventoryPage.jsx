@@ -118,10 +118,6 @@ export function TireInventoryPage({ csrfToken }) {
         <div>
           <p className="text-sm font-semibold text-teal-700">Shop operations</p>
           <h2 className="ui-page-heading mt-1">Tires & inventory</h2>
-          <p className="mt-2 max-w-2xl leading-7 text-slate-600">
-            Track beginning stock, purchases, tire sales, physical adjustments, and current
-            balances.
-          </p>
         </div>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
           <div>

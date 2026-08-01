@@ -68,7 +68,6 @@ export function PeriodClosePage({ csrfToken, onNavigate }) {
       <header>
         <p className="text-sm font-semibold text-blue-600">Finalize</p>
         <h2 className="ui-page-heading mt-1">Period Close</h2>
-        <p className="mt-2 text-slate-600">Choose any range up to 31 days.</p>
       </header>
 
       <section className="rounded-2xl border border-blue-100 bg-white p-5 shadow-sm">
@@ -177,7 +176,12 @@ function DailyBreakdown({ days }) {
       <div className="border-b border-blue-100 px-5 py-4">
         <h3 className="font-bold">Daily breakdown</h3>
       </div>
-      <div className="divide-y divide-slate-100">
+      <div
+        aria-label="Period Close daily breakdown"
+        className="ui-scroll-list divide-y divide-slate-100"
+        role="region"
+        tabIndex="0"
+      >
         {days.map((day) => (
           <details className="group p-4" key={day.businessDate}>
             <summary className="flex cursor-pointer list-none items-center justify-between gap-3">
@@ -239,7 +243,12 @@ function PeriodHistory({ history, onReopen }) {
       {history.periods.length === 0 && history.legacyDailyCloses.length === 0 ? (
         <p className="p-6 text-sm text-slate-500">No closed periods yet.</p>
       ) : (
-        <div className="divide-y divide-slate-100">
+        <div
+          aria-label="Period Close history list"
+          className="ui-scroll-list divide-y divide-slate-100"
+          role="region"
+          tabIndex="0"
+        >
           {history.periods.map((run) => (
             <article className="p-5" key={run.id}>
               <div className="flex flex-wrap items-center justify-between gap-3">

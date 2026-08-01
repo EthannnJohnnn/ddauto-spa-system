@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { centavosToInput, formatPeso, inputToCentavos } from '../catalogs/catalog-formatters.js';
 
 export function CanteenProductsPanel({ products, businessDate, onSave, onStatus }) {
@@ -6,6 +6,16 @@ export function CanteenProductsPanel({ products, businessDate, onSave, onStatus 
   const [values, setValues] = useState(emptyValues(businessDate));
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [search, setSearch] = useState('');
+  const visibleProducts = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    if (!query) return products;
+    return products.filter((product) =>
+      [product.name, categoryLabel(product.category)]
+        .filter(Boolean)
+        .some((value) => value.toLowerCase().includes(query)),
+    );
+  }, [products, search]);
 
   useEffect(() => {
     setValues(editing ? valuesFromProduct(editing, businessDate) : emptyValues(businessDate));
@@ -172,26 +182,42 @@ export function CanteenProductsPanel({ products, businessDate, onSave, onStatus 
 
       <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
         <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
-          <div>
-            <h3 className="font-bold text-slate-950">Canteen inventory</h3>
-            <p className="mt-1 text-sm text-slate-500">
-              Stock shown as of the selected period end.
-            </p>
-          </div>
+          <h3 className="font-bold text-slate-950">Canteen inventory</h3>
           <span className="rounded-full bg-slate-100 px-3 py-1 text-sm font-semibold text-slate-600">
-            {products.length} products
+            {visibleProducts.length === products.length
+              ? `${products.length} products`
+              : `${visibleProducts.length} of ${products.length} products`}
           </span>
         </div>
+        {products.length > 0 && (
+          <div className="border-b border-slate-100 bg-slate-50/60 p-3">
+            <label>
+              <span className="sr-only">Search canteen inventory</span>
+              <input
+                className="ui-list-search"
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder="Search canteen items"
+                type="search"
+                value={search}
+              />
+            </label>
+          </div>
+        )}
         {products.length === 0 ? (
           <div className="p-10 text-center">
             <p className="font-semibold text-slate-700">No canteen products yet</p>
-            <p className="mt-1 text-sm text-slate-500">
-              Add the first product and optionally enter its beginning inventory.
-            </p>
+            <p className="mt-1 text-sm text-slate-500">Add your first product.</p>
           </div>
+        ) : visibleProducts.length === 0 ? (
+          <p className="p-8 text-center text-slate-500">No items match your search.</p>
         ) : (
-          <div className="divide-y divide-slate-100">
-            {products.map((product) => (
+          <div
+            aria-label="Canteen inventory list"
+            className="ui-scroll-list divide-y divide-slate-100"
+            role="region"
+            tabIndex="0"
+          >
+            {visibleProducts.map((product) => (
               <article
                 className={`p-5 ${product.isActive ? '' : 'bg-slate-50 opacity-65'}`}
                 key={product.id}

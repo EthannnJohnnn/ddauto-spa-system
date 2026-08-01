@@ -60,6 +60,35 @@ describe('Phase 6 canteen inventory forms', () => {
     ]);
   });
 
+  it('keeps a long canteen inventory scrollable and searchable', () => {
+    const products = Array.from({ length: 30 }, (_, index) => ({
+      ...product,
+      id: index + 1,
+      name: `Canteen item ${index + 1}`,
+    }));
+    render(
+      <CanteenProductsPanel
+        businessDate="2026-07-01"
+        onSave={() => {}}
+        onStatus={() => {}}
+        products={products}
+      />,
+    );
+
+    expect(screen.getByRole('region', { name: 'Canteen inventory list' })).toHaveClass(
+      'ui-scroll-list',
+    );
+    expect(screen.getByText('30 products')).toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText('Search canteen inventory'), {
+      target: { value: 'item 30' },
+    });
+
+    expect(screen.getByText('1 of 30 products')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Canteen item 30' })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Canteen item 1' })).not.toBeInTheDocument();
+  });
+
   it('auto-fills a canteen sale price and submits a stock-reducing sale item', async () => {
     const onSave = vi.fn().mockResolvedValue(undefined);
     render(

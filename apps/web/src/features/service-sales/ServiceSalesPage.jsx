@@ -83,9 +83,6 @@ export function ServiceSalesPage({ csrfToken }) {
         <div>
           <p className="text-sm font-semibold text-teal-700">Daily operations</p>
           <h2 className="ui-page-heading mt-1">Service sales</h2>
-          <p className="mt-2 max-w-2xl leading-7 text-slate-600">
-            Record each vehicle, its services, and the employees who performed the work.
-          </p>
         </div>
         <label className="w-full sm:w-auto">
           <span className="mb-2 block text-sm font-semibold text-slate-600">Business date</span>

@@ -184,4 +184,20 @@ button[class*='border-slate-300'][class*='bg-white']:hover:not(:disabled) {
   .ui-page-heading {
     @apply text-3xl font-bold tracking-tight text-slate-950 sm:text-[2rem];
   }
+
+  .ui-scroll-list {
+    max-height: min(38rem, 65vh);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
+  }
+
+  .ui-scroll-list:focus-visible {
+    outline: 3px solid rgb(21 139 220 / 24%);
+    outline-offset: -3px;
+  }
+
+  .ui-list-search {
+    @apply w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-sm text-slate-950 outline-none placeholder:text-slate-400 focus:border-blue-400 focus:bg-white;
+  }
 }

@@ -4,10 +4,7 @@ export function ExpenseHistory({ expenses, onEdit, onStatus }) {
   return (
     <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
       <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
-        <div>
-          <h3 className="font-bold text-slate-950">Expense history</h3>
-          <p className="mt-1 text-sm text-slate-500">Active and deleted expenses in this period.</p>
-        </div>
+        <h3 className="font-bold text-slate-950">Expense history</h3>
         <span className="rounded-full bg-slate-100 px-3 py-1 text-sm font-semibold text-slate-600">
           {expenses.length} entries
         </span>
@@ -15,7 +12,12 @@ export function ExpenseHistory({ expenses, onEdit, onStatus }) {
       {expenses.length === 0 ? (
         <EmptyState />
       ) : (
-        <div className="divide-y divide-slate-100">
+        <div
+          aria-label="Expense history list"
+          className="ui-scroll-list divide-y divide-slate-100"
+          role="region"
+          tabIndex="0"
+        >
           {expenses.map((expense) => (
             <article
               className={`p-5 ${expense.status === 'VOIDED' ? 'bg-slate-50 opacity-65' : ''}`}
