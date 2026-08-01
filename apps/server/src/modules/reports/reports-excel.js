@@ -130,6 +130,18 @@ function addSummarySheet(workbook, report, generatedAt) {
       report.summary.cashMovementCentavos,
       'Sales less purchases, expenses, and outside labor',
     ],
+    [
+      'Employee salary',
+      `'Daily Summary'!Q${totalRow}`,
+      report.summary.salaryCentavos,
+      'Daily final salary, including owner adjustments',
+    ],
+    [
+      'Staff meals',
+      `'Daily Summary'!R${totalRow}`,
+      report.summary.mealCentavos,
+      'Meals recorded for present employees',
+    ],
   ];
 
   sheet.getRow(7).values = ['Key metric', '30-day total', 'Definition'];
@@ -148,7 +160,7 @@ function addSummarySheet(workbook, report, generatedAt) {
     }
   });
 
-  const countStart = 21;
+  const countStart = 23;
   sheet.getRow(countStart).values = ['Transaction count', 'Total'];
   styleHeader(sheet.getRow(countStart), 3);
   [
@@ -170,18 +182,18 @@ function addSummarySheet(workbook, report, generatedAt) {
     sheet.getCell(row, 2).numFmt = COUNT_FORMAT;
   });
 
-  sheet.getCell('A26').value = 'Important';
-  sheet.getCell('A26').font = { bold: true, color: { argb: COLORS.navy } };
-  sheet.mergeCells('A27:C28');
-  sheet.getCell('A27').value =
+  sheet.getCell('A28').value = 'Important';
+  sheet.getCell('A28').font = { bold: true, color: { argb: COLORS.navy } };
+  sheet.mergeCells('A29:C30');
+  sheet.getCell('A29').value =
     'Voided records remain visible on the detail sheets for audit history, but their values are excluded from the Summary and Daily Summary totals.';
-  sheet.getCell('A27').alignment = { vertical: 'top', wrapText: true };
-  sheet.getCell('A27').fill = solidFill(COLORS.paleSlate);
-  sheet.getCell('A27').border = outlineBorder('CBD5E1');
-  sheet.getRow(27).height = 25;
-  sheet.getRow(28).height = 25;
+  sheet.getCell('A29').alignment = { vertical: 'top', wrapText: true };
+  sheet.getCell('A29').fill = solidFill(COLORS.paleSlate);
+  sheet.getCell('A29').border = outlineBorder('CBD5E1');
+  sheet.getRow(29).height = 25;
+  sheet.getRow(30).height = 25;
 
-  styleBody(sheet, 3, 28, 3);
+  styleBody(sheet, 3, 30, 3);
   sheet.pageSetup = { fitToPage: true, fitToWidth: 1, fitToHeight: 1, orientation: 'portrait' };
   sheet.headerFooter.oddFooter = '&LDD Auto Spa&CPage &P of &N&RConfidential owner report';
 }
@@ -207,6 +219,10 @@ function addDailySheet(workbook, breakdown, summary) {
     ['Service Txns', 14],
     ['Tire Txns', 12],
     ['Canteen Txns', 15],
+    ['Present Employees', 17],
+    ['Employee Salary', 18],
+    ['Staff Meals', 16],
+    ['Period Close Status', 20],
   ];
   sheet.columns = columns.map(([header, width]) => ({ header, width }));
   addSheetHeading(
@@ -235,10 +251,15 @@ function addDailySheet(workbook, breakdown, summary) {
       day.serviceTransactionCount,
       day.tireTransactionCount,
       day.canteenTransactionCount,
+      day.presentEmployeeCount,
+      centavosToPesos(day.salaryCentavos),
+      centavosToPesos(day.mealCentavos),
+      day.periodCloseStatus,
     ];
     row.getCell(1).numFmt = 'mmm d, yyyy';
     for (let column = 2; column <= 12; column += 1) row.getCell(column).numFmt = PESO_FORMAT;
-    for (let column = 13; column <= 15; column += 1) row.getCell(column).numFmt = COUNT_FORMAT;
+    for (let column = 13; column <= 16; column += 1) row.getCell(column).numFmt = COUNT_FORMAT;
+    for (let column = 17; column <= 18; column += 1) row.getCell(column).numFmt = PESO_FORMAT;
     if (!day.hasActivity) row.font = { color: { argb: '94A3B8' } };
   });
 
@@ -259,22 +280,27 @@ function addDailySheet(workbook, breakdown, summary) {
     'serviceTransactionCount',
     'tireTransactionCount',
     'canteenTransactionCount',
+    'presentEmployeeCount',
+    'salaryCentavos',
+    'mealCentavos',
   ];
-  for (let column = 2; column <= 15; column += 1) {
+  for (let column = 2; column <= 18; column += 1) {
     const letter = sheet.getColumn(column).letter;
     const rawResult = summary[summaryFields[column - 2]];
     sheet.getCell(totalRow, column).value = {
       formula: `SUM(${letter}4:${letter}${totalRow - 1})`,
-      result: column <= 12 ? centavosToPesos(rawResult) : rawResult,
+      result: column <= 12 || column >= 17 ? centavosToPesos(rawResult) : rawResult,
     };
-    sheet.getCell(totalRow, column).numFmt = column <= 12 ? PESO_FORMAT : COUNT_FORMAT;
+    sheet.getCell(totalRow, column).numFmt =
+      column <= 12 || column >= 17 ? PESO_FORMAT : COUNT_FORMAT;
   }
+  sheet.getCell(totalRow, 19).value = 'See daily rows';
   styleRange(sheet.getRow(totalRow), columns.length, {
     fill: solidFill(COLORS.navy),
     font: { bold: true, color: { argb: COLORS.white } },
   });
-  sheet.autoFilter = { from: 'A3', to: `O${Math.max(3, totalRow - 1)}` };
-  styleBody(sheet, 4, totalRow - 1, 15);
+  sheet.autoFilter = { from: 'A3', to: `S${Math.max(3, totalRow - 1)}` };
+  styleBody(sheet, 4, totalRow - 1, 19);
   sheet.pageSetup = { fitToPage: true, fitToWidth: 1, fitToHeight: 0, orientation: 'landscape' };
 }
 

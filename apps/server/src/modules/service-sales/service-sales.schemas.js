@@ -48,10 +48,13 @@ export const attendanceSchema = z
     employeeId: z.number().int().positive(),
     isPresent: z.boolean(),
     mealCostCentavos: moneyCentavos.default(5_000),
+    salaryOverrideCentavos: moneyCentavos.nullable().default(null),
   })
   .strict();
 
-export const statusReasonSchema = z.object({ reason: z.string().trim().min(3).max(200) }).strict();
+export const statusReasonSchema = z
+  .object({ reason: z.string().trim().max(200).default('') })
+  .strict();
 
 function isRealDate(value) {
   const date = new Date(`${value}T00:00:00.000Z`);

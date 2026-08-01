@@ -91,17 +91,10 @@ export const tireDocumentSchema = z
         message: 'Beginning inventory, purchases, and sales require positive quantities.',
       });
     }
-    if (document.documentType === 'ADJUSTMENT' && document.notes.length < 3) {
-      context.addIssue({
-        code: 'custom',
-        path: ['notes'],
-        message: 'Enter a reason for the stock adjustment.',
-      });
-    }
   });
 
 export const tireStatusReasonSchema = z
-  .object({ reason: z.string().trim().min(3).max(200) })
+  .object({ reason: z.string().trim().max(200).default('') })
   .strict();
 
 function isRealDate(value) {

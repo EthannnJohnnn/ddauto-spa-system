@@ -52,7 +52,7 @@ export const updateServiceSchema = serviceSchema
 
 export const archiveSchema = z
   .object({
-    reason: z.string().trim().min(3).max(200),
+    reason: z.string().trim().max(200).default(''),
   })
   .strict();
 

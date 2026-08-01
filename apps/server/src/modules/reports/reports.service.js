@@ -1,8 +1,9 @@
 import { buildReportsWorkbook } from './reports-excel.js';
 
 export class ReportsService {
-  constructor(repository) {
+  constructor(repository, { attendanceService = null } = {}) {
     this.repository = repository;
+    this.attendanceService = attendanceService;
   }
 
   getOverview({ start, end }) {
@@ -40,7 +41,20 @@ export class ReportsService {
       ...mapPurchases(tirePurchases, tirePurchaseItems, 'TIRE'),
       ...mapPurchases(canteenPurchases, canteenPurchaseItems, 'CANTEEN'),
     ];
-    const dailyBreakdown = buildDailyBreakdown(start, end, transactions, purchases, expenses);
+    const financialDays = buildDailyBreakdown(start, end, transactions, purchases, expenses);
+    const dailyBreakdown = financialDays.map((day) => {
+      const workforce = this.getWorkforceDay(day.businessDate);
+      return {
+        ...day,
+        ...workforce,
+        hasActivity:
+          day.hasActivity ||
+          workforce.hasActivity ||
+          workforce.presentEmployeeCount > 0 ||
+          workforce.salaryCentavos > 0 ||
+          workforce.mealCentavos > 0,
+      };
+    });
     const activeDays = dailyBreakdown.filter((day) => day.hasActivity);
 
     return {
@@ -58,6 +72,86 @@ export class ReportsService {
   async exportExcel({ start, end }, options) {
     return buildReportsWorkbook(this.getOverview({ start, end }), options);
   }
+
+  getWorkforceDay(businessDate) {
+    const periodDay = this.repository.findActivePeriodDay(businessDate);
+    if (periodDay) {
+      return {
+        ...mapPeriodDayFinancials(periodDay),
+        presentEmployeeCount: periodDay.present_employee_count,
+        salaryCentavos: periodDay.salary_centavos,
+        mealCentavos: periodDay.meal_centavos,
+        periodCloseStatus: 'PAID',
+        periodCloseId: periodDay.close_id,
+        periodCloseStart: periodDay.start_date,
+        periodCloseEnd: periodDay.end_date,
+      };
+    }
+    const legacyClose = this.repository.findLegacyDailyCloseDay(businessDate);
+    const legacy = this.repository.findLegacyPayrollDay(businessDate);
+    if (legacy) {
+      return {
+        ...(legacyClose ? mapLegacyDayFinancials(legacyClose) : {}),
+        presentEmployeeCount: legacy.employee_count,
+        salaryCentavos: legacy.total_salary_centavos,
+        mealCentavos: legacy.total_meal_centavos,
+        periodCloseStatus: 'PAID (legacy)',
+        periodCloseId: legacy.close_id,
+        periodCloseStart: businessDate,
+        periodCloseEnd: businessDate,
+      };
+    }
+    const attendance = this.attendanceService?.getDay(businessDate);
+    return {
+      presentEmployeeCount: attendance?.presentEmployeeCount ?? 0,
+      salaryCentavos: attendance?.salaryCentavos ?? 0,
+      mealCentavos: attendance?.mealCentavos ?? 0,
+      periodCloseStatus: 'OPEN',
+      periodCloseId: null,
+      periodCloseStart: null,
+      periodCloseEnd: null,
+    };
+  }
+}
+
+function mapPeriodDayFinancials(row) {
+  return {
+    serviceSalesCentavos: row.service_sales_centavos,
+    tireSalesCentavos: row.tire_sales_centavos,
+    canteenSalesCentavos: row.canteen_sales_centavos,
+    totalSalesCentavos: row.total_sales_centavos,
+    productCostCentavos: row.product_cost_centavos,
+    externalLaborCentavos: row.external_labor_centavos,
+    expenseCentavos: row.expense_centavos,
+    purchaseCentavos: row.purchase_centavos,
+    estimatedGrossProfitCentavos: row.estimated_gross_profit_centavos,
+    estimatedNetCentavos: row.estimated_net_centavos,
+    cashMovementCentavos: row.cash_movement_centavos,
+    serviceTransactionCount: row.service_transaction_count,
+    tireTransactionCount: row.tire_transaction_count,
+    canteenTransactionCount: row.canteen_transaction_count,
+    hasActivity: Boolean(row.had_activity),
+  };
+}
+
+function mapLegacyDayFinancials(row) {
+  return {
+    serviceSalesCentavos: row.service_sales_centavos,
+    tireSalesCentavos: row.tire_sales_centavos,
+    canteenSalesCentavos: row.canteen_sales_centavos,
+    totalSalesCentavos: row.total_sales_centavos,
+    productCostCentavos: row.product_cost_centavos,
+    externalLaborCentavos: row.external_labor_centavos,
+    expenseCentavos: row.expense_centavos,
+    purchaseCentavos: row.purchase_centavos,
+    estimatedGrossProfitCentavos: row.estimated_gross_profit_centavos,
+    estimatedNetCentavos: row.estimated_net_centavos,
+    cashMovementCentavos: row.cash_movement_centavos,
+    serviceTransactionCount: row.service_transaction_count,
+    tireTransactionCount: row.tire_transaction_count,
+    canteenTransactionCount: row.canteen_transaction_count,
+    hasActivity: true,
+  };
 }
 
 function mapEquipmentAttention(row) {
@@ -236,6 +330,9 @@ function summarizeDays(days) {
     'serviceTransactionCount',
     'tireTransactionCount',
     'canteenTransactionCount',
+    'presentEmployeeCount',
+    'salaryCentavos',
+    'mealCentavos',
   ];
   return Object.fromEntries(fields.map((field) => [field, sum(days.map((day) => day[field]))]));
 }

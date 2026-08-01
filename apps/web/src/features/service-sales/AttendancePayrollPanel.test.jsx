@@ -29,6 +29,7 @@ describe('Phase 8 attendance payroll panel', () => {
         employeeId: 1,
         isPresent: true,
         mealCostCentavos: 5_000,
+        salaryOverrideCentavos: null,
       }),
     );
   });

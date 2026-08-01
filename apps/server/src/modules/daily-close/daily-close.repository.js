@@ -17,6 +17,16 @@ export class DailyCloseRepository {
       .get(businessDate);
   }
 
+  findActivePeriodForDate(businessDate) {
+    return this.database
+      .prepare(
+        `SELECT * FROM period_close_runs
+         WHERE status = 'CLOSED' AND ? BETWEEN start_date AND end_date
+         ORDER BY id DESC LIMIT 1`,
+      )
+      .get(businessDate);
+  }
+
   listRuns(businessDate) {
     return this.database
       .prepare('SELECT * FROM daily_close_runs WHERE business_date = ? ORDER BY id DESC')

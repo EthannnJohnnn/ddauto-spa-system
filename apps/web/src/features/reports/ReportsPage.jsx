@@ -227,21 +227,29 @@ export function DailyBreakdownTable({ days }) {
     <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
       <div className="border-b border-slate-200 px-5 py-4">
         <h3 className="font-bold text-slate-950">Daily combined summary</h3>
-        <p className="mt-1 text-sm text-slate-500">
-          Every day in the selected period remains visible, including days with no activity.
-        </p>
+        <p className="mt-1 text-sm text-slate-500">Finance and workforce by day.</p>
       </div>
       <div className="overflow-x-auto">
         <table className="min-w-full text-left text-sm">
           <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
             <tr>
-              {['Date', 'Services', 'Tires', 'Canteen', 'Total sales', 'Expenses', 'Est. net'].map(
-                (heading) => (
-                  <th className="whitespace-nowrap px-4 py-3 font-semibold" key={heading}>
-                    {heading}
-                  </th>
-                ),
-              )}
+              {[
+                'Date',
+                'Services',
+                'Tires',
+                'Canteen',
+                'Total sales',
+                'Present',
+                'Salary',
+                'Meals',
+                'Period status',
+                'Expenses',
+                'Est. net',
+              ].map((heading) => (
+                <th className="whitespace-nowrap px-4 py-3 font-semibold" key={heading}>
+                  {heading}
+                </th>
+              ))}
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
@@ -257,6 +265,16 @@ export function DailyBreakdownTable({ days }) {
                 <MoneyCell value={day.tireSalesCentavos} />
                 <MoneyCell value={day.canteenSalesCentavos} />
                 <MoneyCell bold value={day.totalSalesCentavos} />
+                <td className="whitespace-nowrap px-4 py-3">{day.presentEmployeeCount}</td>
+                <MoneyCell value={day.salaryCentavos} />
+                <MoneyCell value={day.mealCentavos} />
+                <td className="whitespace-nowrap px-4 py-3">
+                  <span
+                    className={`rounded-full px-2 py-1 text-xs font-bold ${day.periodCloseStatus === 'OPEN' ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'}`}
+                  >
+                    {day.periodCloseStatus}
+                  </span>
+                </td>
                 <MoneyCell value={day.expenseCentavos} />
                 <MoneyCell bold value={day.estimatedNetCentavos} />
               </tr>

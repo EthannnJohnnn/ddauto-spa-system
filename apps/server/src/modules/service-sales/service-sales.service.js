@@ -19,7 +19,12 @@ export class ServiceSalesService {
         .map((row) => [row.employee_id, row.labor_earned_centavos]),
     );
     const payroll = attendance
-      .filter((entry) => entry.isPresent || laborByEmployee.has(entry.employeeId))
+      .filter(
+        (entry) =>
+          entry.isPresent ||
+          laborByEmployee.has(entry.employeeId) ||
+          entry.salaryOverrideCentavos !== null,
+      )
       .map((entry) => {
         const laborEarnedCentavos = laborByEmployee.get(entry.employeeId) ?? 0;
         const fixedTopUpCentavos = entry.isPresent
@@ -29,7 +34,9 @@ export class ServiceSalesService {
           ...entry,
           laborEarnedCentavos,
           fixedTopUpCentavos,
-          totalPayCentavos: laborEarnedCentavos + fixedTopUpCentavos,
+          calculatedSalaryCentavos: laborEarnedCentavos + fixedTopUpCentavos,
+          totalPayCentavos:
+            entry.salaryOverrideCentavos ?? laborEarnedCentavos + fixedTopUpCentavos,
         };
       });
     const activeTickets = tickets.filter((ticket) => ticket.status === 'ACTIVE');
@@ -44,7 +51,8 @@ export class ServiceSalesService {
     const externalLaborCentavos = sum(
       activeTickets.flatMap((ticket) => ticket.items.map((item) => item.externalLaborCostCentavos)),
     );
-    const totalPayrollCentavos = regularLaborCentavos + fixedTopUpsCentavos;
+    const calculatedPayrollCentavos = regularLaborCentavos + fixedTopUpsCentavos;
+    const totalPayrollCentavos = sum(payroll.map((entry) => entry.totalPayCentavos));
 
     return {
       businessDate,
@@ -57,6 +65,7 @@ export class ServiceSalesService {
         totalSalesCentavos,
         regularLaborCentavos,
         fixedTopUpsCentavos,
+        calculatedPayrollCentavos,
         totalPayrollCentavos,
         mealCostCentavos,
         externalLaborCentavos,
@@ -81,6 +90,7 @@ export class ServiceSalesService {
       });
       this.repository.replaceTicketItems(ticketId, normalized.items, now);
       this.ensureWorkerAttendance(input.businessDate, normalized.employees, actorUserId, now);
+      this.repository.clearAttendanceReview(input.businessDate);
       this.auditRepository.record({
         actorUserId,
         action: 'SERVICE_TICKET_CREATED',
@@ -120,6 +130,8 @@ export class ServiceSalesService {
       });
       this.repository.replaceTicketItems(ticketId, normalized.items, now);
       this.ensureWorkerAttendance(input.businessDate, normalized.employees, actorUserId, now);
+      this.repository.clearAttendanceReview(current.business_date);
+      this.repository.clearAttendanceReview(input.businessDate);
       this.auditRepository.record({
         actorUserId,
         action: 'SERVICE_TICKET_UPDATED',
@@ -159,6 +171,7 @@ export class ServiceSalesService {
         }
         this.ensureWorkerAttendance(current.business_date, employees, actorUserId, now);
       }
+      this.repository.clearAttendanceReview(current.business_date);
       this.auditRepository.record({
         actorUserId,
         action: isActive ? 'SERVICE_TICKET_RESTORED' : 'SERVICE_TICKET_VOIDED',
@@ -197,6 +210,7 @@ export class ServiceSalesService {
         actorUserId,
         now,
       });
+      this.repository.clearAttendanceReview(input.businessDate);
       this.auditRepository.record({
         actorUserId,
         action: input.isPresent ? 'EMPLOYEE_MARKED_PRESENT' : 'EMPLOYEE_MARKED_ABSENT',
@@ -205,6 +219,7 @@ export class ServiceSalesService {
         metadata: {
           employeeName: employee.display_name,
           mealCostCentavos: input.isPresent ? input.mealCostCentavos : 0,
+          salaryOverrideCentavos: input.salaryOverrideCentavos,
         },
         now,
       });
@@ -456,6 +471,8 @@ function mapAttendance(row) {
     fixedDailyRateCentavos: row.fixed_daily_rate_centavos_snapshot,
     isPresent: Boolean(row.is_present),
     mealCostCentavos: row.meal_cost_centavos,
+    salaryOverrideCentavos: row.salary_override_centavos,
+    salaryOverrideAt: row.salary_override_at,
   };
 }
 

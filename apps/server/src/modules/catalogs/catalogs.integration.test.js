@@ -127,22 +127,17 @@ describe('business catalogs API', () => {
       .send({ name: 'Large SUV' });
     expect(updated.body.name).toBe('Large SUV');
 
-    const missingReason = await owner.agent
-      .post(`/api/v1/catalogs/vehicle-classes/${created.body.id}/archive`)
-      .set('x-csrf-token', owner.csrfToken)
-      .send({ reason: '' });
-    expect(missingReason.status).toBe(400);
-
     const archived = await owner.agent
       .post(`/api/v1/catalogs/vehicle-classes/${created.body.id}/archive`)
       .set('x-csrf-token', owner.csrfToken)
-      .send({ reason: 'Temporarily unused' });
+      .send({ reason: '' });
+    expect(archived.status).toBe(200);
     expect(archived.body.isActive).toBe(false);
 
     const restored = await owner.agent
       .post(`/api/v1/catalogs/vehicle-classes/${created.body.id}/restore`)
       .set('x-csrf-token', owner.csrfToken)
-      .send({ reason: 'Used again' });
+      .send({ reason: '' });
     expect(restored.body.isActive).toBe(true);
     expect(database.prepare('SELECT COUNT(*) AS count FROM vehicle_classes').get().count).toBe(1);
   });

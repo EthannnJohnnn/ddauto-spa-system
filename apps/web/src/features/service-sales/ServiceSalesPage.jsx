@@ -2,15 +2,12 @@ import { useCallback, useEffect, useState } from 'react';
 import { getCatalogs } from '../catalogs/catalogs-api.js';
 import { formatPeso } from '../catalogs/catalog-formatters.js';
 import { ReasonDialog } from '../catalogs/ReasonDialog.jsx';
-import { AttendancePayrollPanel } from './AttendancePayrollPanel.jsx';
+import { getOpenAttendance } from '../attendance-payroll/attendance-api.js';
 import { DailyTransactions } from './DailyTransactions.jsx';
-import { PayrollClosingPanel } from './PayrollClosingPanel.jsx';
 import { ServiceTicketForm } from './ServiceTicketForm.jsx';
-import { closeDailyPayroll, getDailyPayroll, reopenDailyPayroll } from './payroll-api.js';
 import {
   createServiceTicket,
   getDailyServiceSales,
-  saveAttendance,
   setServiceTicketActive,
   updateServiceTicket,
 } from './service-sales-api.js';
@@ -19,7 +16,7 @@ export function ServiceSalesPage({ csrfToken }) {
   const [businessDate, setBusinessDate] = useState(todayLocal());
   const [catalogs, setCatalogs] = useState(null);
   const [daily, setDaily] = useState(null);
-  const [payrollState, setPayrollState] = useState(null);
+  const [dateStatus, setDateStatus] = useState(null);
   const [editingTicket, setEditingTicket] = useState(null);
   const [statusTarget, setStatusTarget] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -29,14 +26,14 @@ export function ServiceSalesPage({ csrfToken }) {
     setLoading(true);
     setError('');
     try {
-      const [catalogData, dailyData, payrollData] = await Promise.all([
+      const [catalogData, dailyData, attendanceData] = await Promise.all([
         getCatalogs(),
         getDailyServiceSales(businessDate),
-        getDailyPayroll(businessDate),
+        getOpenAttendance(businessDate),
       ]);
       setCatalogs(catalogData);
       setDaily(dailyData);
-      setPayrollState(payrollData);
+      setDateStatus(attendanceData.days.find((day) => day.businessDate === businessDate) ?? null);
     } catch (loadError) {
       setError(loadError.message);
     } finally {
@@ -58,26 +55,6 @@ export function ServiceSalesPage({ csrfToken }) {
     await load();
   }
 
-  async function updateAttendance(values) {
-    await saveAttendance(values, csrfToken);
-    await load();
-  }
-
-  async function closePayroll(values) {
-    await closeDailyPayroll(values, csrfToken);
-    setEditingTicket(null);
-    await load();
-  }
-
-  function requestPayrollReopen() {
-    setStatusTarget({
-      kind: 'payroll',
-      isActive: true,
-      activeVerb: 'Reopen',
-      label: `payroll for ${businessDate}`,
-    });
-  }
-
   function requestStatus(ticket) {
     setStatusTarget({
       ticket,
@@ -87,12 +64,6 @@ export function ServiceSalesPage({ csrfToken }) {
   }
 
   async function confirmStatus(reason) {
-    if (statusTarget.kind === 'payroll') {
-      await reopenDailyPayroll({ businessDate, reason }, csrfToken);
-      setStatusTarget(null);
-      await load();
-      return;
-    }
     await setServiceTicketActive(statusTarget.ticket.id, statusTarget.isActive, reason, csrfToken);
     setStatusTarget(null);
     await load();
@@ -102,7 +73,7 @@ export function ServiceSalesPage({ csrfToken }) {
     return <PageMessage title="Loading service sales…" />;
   }
 
-  if (!daily || !catalogs || !payrollState) {
+  if (!daily || !catalogs) {
     return <PageMessage title="Service sales could not load" detail={error} onRetry={load} />;
   }
 
@@ -123,7 +94,7 @@ export function ServiceSalesPage({ csrfToken }) {
             onChange={(event) => {
               setEditingTicket(null);
               setDaily(null);
-              setPayrollState(null);
+              setDateStatus(null);
               setBusinessDate(event.target.value);
             }}
             type="date"
@@ -150,16 +121,15 @@ export function ServiceSalesPage({ csrfToken }) {
         </div>
       )}
 
-      <div className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,1.45fr)_minmax(22rem,0.75fr)]">
-        {payrollState.isClosed ? (
+      <div className="mt-6">
+        {dateStatus?.status === 'PAID' ? (
           <section className="rounded-2xl border border-emerald-200 bg-emerald-50 p-8 shadow-sm">
             <p className="text-sm font-bold uppercase tracking-[0.14em] text-emerald-700">
               Day finalized
             </p>
-            <h3 className="mt-2 text-2xl font-bold text-slate-950">Payroll is closed</h3>
+            <h3 className="mt-2 text-2xl font-bold text-slate-950">This date is paid</h3>
             <p className="mt-3 max-w-xl leading-7 text-slate-600">
-              Transactions and attendance are locked to protect the finalized totals. Use Reopen
-              payroll if the owner needs to correct this date.
+              Reopen its Period Close before correcting transactions.
             </p>
           </section>
         ) : (
@@ -171,27 +141,11 @@ export function ServiceSalesPage({ csrfToken }) {
             onSave={saveTicket}
           />
         )}
-        <div className="space-y-6">
-          <AttendancePayrollPanel
-            attendance={daily.attendance}
-            businessDate={businessDate}
-            locked={payrollState.isClosed}
-            onSave={updateAttendance}
-            payroll={daily.payroll}
-          />
-          <PayrollClosingPanel
-            businessDate={businessDate}
-            key={businessDate}
-            onClose={closePayroll}
-            onRequestReopen={requestPayrollReopen}
-            payrollState={payrollState}
-          />
-        </div>
       </div>
 
       <DailyTransactions
         className="mt-6"
-        locked={payrollState.isClosed}
+        locked={dateStatus?.status === 'PAID'}
         onEdit={setEditingTicket}
         onStatus={requestStatus}
         tickets={daily.tickets}

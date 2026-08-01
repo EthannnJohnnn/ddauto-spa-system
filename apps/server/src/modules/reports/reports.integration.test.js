@@ -123,6 +123,13 @@ describe('combined reports API', () => {
       formula: 'SUM(E4:E33)',
       result: 1600,
     });
+    expect(workbook.getWorksheet('Daily Summary').getCell('Q34').value).toMatchObject({
+      formula: 'SUM(Q4:Q33)',
+    });
+    expect(workbook.getWorksheet('Daily Summary').getCell('R34').value).toMatchObject({
+      formula: 'SUM(R4:R33)',
+    });
+    expect(workbook.getWorksheet('Daily Summary').getCell('S33').value).toBe('OPEN');
     expect(workbook.getWorksheet('Service Sales').getCell('G4').value).toBe(1000);
   });
 });

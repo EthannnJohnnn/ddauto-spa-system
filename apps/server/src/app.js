@@ -41,6 +41,12 @@ import { createEquipmentRouter } from './modules/equipment/equipment.routes.js';
 import { DashboardRepository } from './modules/dashboard/dashboard.repository.js';
 import { DashboardService } from './modules/dashboard/dashboard.service.js';
 import { createDashboardRouter } from './modules/dashboard/dashboard.routes.js';
+import { AttendanceRepository } from './modules/attendance/attendance.repository.js';
+import { AttendanceService } from './modules/attendance/attendance.service.js';
+import { createAttendanceRouter } from './modules/attendance/attendance.routes.js';
+import { PeriodCloseRepository } from './modules/period-close/period-close.repository.js';
+import { PeriodCloseService } from './modules/period-close/period-close.service.js';
+import { createPeriodCloseRouter } from './modules/period-close/period-close.routes.js';
 
 const currentDirectory = path.dirname(fileURLToPath(import.meta.url));
 const webDistDirectory = path.resolve(currentDirectory, '../../web/dist');
@@ -76,6 +82,13 @@ export function createApp({ database, runtimeConfig = getRuntimeConfig() }) {
     dateGuard: businessDateGuard,
   });
   const serviceSalesRouter = createServiceSalesRouter(serviceSalesService, authModule.middleware);
+  const attendanceRepository = new AttendanceRepository(database);
+  const attendanceService = new AttendanceService(
+    attendanceRepository,
+    serviceSalesService,
+    auditRepository,
+  );
+  const attendanceRouter = createAttendanceRouter(attendanceService, authModule.middleware);
   const tireInventoryRepository = new TireInventoryRepository(database);
   const tireInventoryService = new TireInventoryService(tireInventoryRepository, auditRepository, {
     dateGuard: businessDateGuard,
@@ -113,8 +126,16 @@ export function createApp({ database, runtimeConfig = getRuntimeConfig() }) {
   );
   const payrollRouter = createPayrollRouter(payrollService, authModule.middleware);
   const reportsRepository = new ReportsRepository(database);
-  const reportsService = new ReportsService(reportsRepository);
+  const reportsService = new ReportsService(reportsRepository, { attendanceService });
   const reportsRouter = createReportsRouter(reportsService, authModule.middleware);
+  const periodCloseRepository = new PeriodCloseRepository(database);
+  const periodCloseService = new PeriodCloseService(
+    periodCloseRepository,
+    reportsService,
+    attendanceService,
+    auditRepository,
+  );
+  const periodCloseRouter = createPeriodCloseRouter(periodCloseService, authModule.middleware);
   const dailyCloseService = new DailyCloseService(
     dailyCloseRepository,
     reportsService,
@@ -142,12 +163,14 @@ export function createApp({ database, runtimeConfig = getRuntimeConfig() }) {
   app.use('/api/v1/dashboard', dashboardRouter);
   app.use('/api/v1/catalogs', catalogsRouter);
   app.use('/api/v1/service-sales', serviceSalesRouter);
+  app.use('/api/v1/attendance', attendanceRouter);
   app.use('/api/v1/tire-inventory', tireInventoryRouter);
   app.use('/api/v1/canteen-inventory', canteenInventoryRouter);
   app.use('/api/v1/purchases-expenses', purchasesExpensesRouter);
   app.use('/api/v1/payroll', payrollRouter);
   app.use('/api/v1/reports', reportsRouter);
   app.use('/api/v1/daily-close', dailyCloseRouter);
+  app.use('/api/v1/period-close', periodCloseRouter);
   app.use('/api/v1/equipment', equipmentRouter);
 
   if (existsSync(webDistDirectory)) {

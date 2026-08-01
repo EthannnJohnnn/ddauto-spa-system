@@ -10,7 +10,7 @@ import { PurchasesExpensesPage } from '../purchases-expenses/PurchasesExpensesPa
 import { ReportsPage } from '../reports/ReportsPage.jsx';
 import { getReportsOverview } from '../reports/reports-api.js';
 import { AttendancePayrollPage } from '../attendance-payroll/AttendancePayrollPage.jsx';
-import { DailyClosePage } from '../daily-close/DailyClosePage.jsx';
+import { PeriodClosePage } from '../period-close/PeriodClosePage.jsx';
 import { EquipmentPage } from '../equipment/EquipmentPage.jsx';
 import { DashboardNotes } from './DashboardNotes.jsx';
 
@@ -29,9 +29,9 @@ const navigation = [
   {
     label: 'Management',
     items: [
-      { name: 'Attendance & payroll', icon: 'payroll' },
+      { name: 'Attendance', icon: 'payroll' },
       { name: 'Reports', icon: 'reports' },
-      { name: 'Daily close', icon: 'close' },
+      { name: 'Period Close', icon: 'close' },
       { name: 'Settings', icon: 'settings' },
     ],
   },
@@ -178,12 +178,12 @@ export function DashboardShell({ user, csrfToken, onLogout }) {
             <EquipmentPage csrfToken={csrfToken} />
           ) : activeModule === 'Purchases & expenses' ? (
             <PurchasesExpensesPage csrfToken={csrfToken} onNavigate={setActiveModule} />
-          ) : activeModule === 'Attendance & payroll' ? (
+          ) : activeModule === 'Attendance' ? (
             <AttendancePayrollPage csrfToken={csrfToken} />
           ) : activeModule === 'Reports' ? (
             <ReportsPage />
-          ) : activeModule === 'Daily close' ? (
-            <DailyClosePage csrfToken={csrfToken} onNavigate={setActiveModule} />
+          ) : activeModule === 'Period Close' ? (
+            <PeriodClosePage csrfToken={csrfToken} onNavigate={setActiveModule} />
           ) : activeModule === 'Settings' ? (
             <CatalogSettings csrfToken={csrfToken} />
           ) : (

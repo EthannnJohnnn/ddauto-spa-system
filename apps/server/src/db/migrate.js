@@ -51,6 +51,11 @@ const migrations = [
     name: 'dashboard owner notes',
     sql: readFileSync(new URL('./migrations/010_dashboard_notes.sql', import.meta.url), 'utf8'),
   },
+  {
+    version: 11,
+    name: 'attendance reviews and period closing',
+    sql: readFileSync(new URL('./migrations/011_period_close.sql', import.meta.url), 'utf8'),
+  },
 ];
 
 export function migrateDatabase(database) {
