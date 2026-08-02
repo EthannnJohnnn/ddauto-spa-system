@@ -220,13 +220,23 @@ describe('Period Close API', () => {
     expect(tooLong.status).toBe(400);
     expect(tooLong.body.error.code).toBe('PERIOD_CLOSE_TOO_LONG');
 
+    const futureDate = localDateAfter(1);
     const future = await context.owner.agent.get(
-      '/api/v1/period-close/preview?start=2026-08-02&end=2026-08-02',
+      `/api/v1/period-close/preview?start=${futureDate}&end=${futureDate}`,
     );
     expect(future.status).toBe(400);
     expect(future.body.error.code).toBe('PERIOD_CLOSE_FUTURE_DATE');
   });
 });
+
+function localDateAfter(days) {
+  const date = new Date();
+  date.setDate(date.getDate() + days);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
 
 async function createContext(app) {
   const agent = request.agent(app);
