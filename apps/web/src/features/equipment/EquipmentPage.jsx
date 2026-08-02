@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { centavosToInput, formatPeso, inputToCentavos } from '../catalogs/catalog-formatters.js';
 import { ReasonDialog } from '../catalogs/ReasonDialog.jsx';
+import { useEditNavigation } from '../../hooks/useEditNavigation.js';
 import {
   createEquipmentBatch,
   createEquipmentCategory,
@@ -38,6 +39,7 @@ export function EquipmentPage({ csrfToken }) {
   const [showAddForm, setShowAddForm] = useState(false);
   const [reasonTarget, setReasonTarget] = useState(null);
   const [error, setError] = useState('');
+  const editRegionRef = useEditNavigation(editingItem || editingBatch || editingRepair);
 
   const load = useCallback(async () => {
     try {
@@ -126,42 +128,46 @@ export function EquipmentPage({ csrfToken }) {
               }}
             />
           )}
-          {editingItem && (
-            <ItemForm
-              categories={overview.categories}
-              item={editingItem}
-              onCancel={() => setEditingItem(null)}
-              onSave={(values) =>
-                refresh(() => updateEquipmentItem(editingItem.id, values, csrfToken))
-              }
-            />
-          )}
-          {editingBatch && (
-            <BatchEditForm
-              item={editingBatch}
-              onCancel={() => setEditingBatch(null)}
-              onSave={(values) =>
-                refresh(() => updateEquipmentBatch(editingBatch.purchaseBatchId, values, csrfToken))
-              }
-            />
-          )}
-          {(repairTarget || editingRepair) && (
-            <RepairForm
-              item={repairTarget}
-              repair={editingRepair}
-              onCancel={() => {
-                setRepairTarget(null);
-                setEditingRepair(null);
-              }}
-              onSave={(values) =>
-                refresh(() =>
-                  editingRepair
-                    ? updateEquipmentRepair(editingRepair.id, values, csrfToken)
-                    : createEquipmentRepair(repairTarget.id, values, csrfToken),
-                )
-              }
-            />
-          )}
+          <div className="scroll-mt-28 space-y-6" ref={editRegionRef}>
+            {editingItem && (
+              <ItemForm
+                categories={overview.categories}
+                item={editingItem}
+                onCancel={() => setEditingItem(null)}
+                onSave={(values) =>
+                  refresh(() => updateEquipmentItem(editingItem.id, values, csrfToken))
+                }
+              />
+            )}
+            {editingBatch && (
+              <BatchEditForm
+                item={editingBatch}
+                onCancel={() => setEditingBatch(null)}
+                onSave={(values) =>
+                  refresh(() =>
+                    updateEquipmentBatch(editingBatch.purchaseBatchId, values, csrfToken),
+                  )
+                }
+              />
+            )}
+            {(repairTarget || editingRepair) && (
+              <RepairForm
+                item={repairTarget}
+                repair={editingRepair}
+                onCancel={() => {
+                  setRepairTarget(null);
+                  setEditingRepair(null);
+                }}
+                onSave={(values) =>
+                  refresh(() =>
+                    editingRepair
+                      ? updateEquipmentRepair(editingRepair.id, values, csrfToken)
+                      : createEquipmentRepair(repairTarget.id, values, csrfToken),
+                  )
+                }
+              />
+            )}
+          </div>
           <Filters categories={overview.categories} filters={filters} onChange={setFilters} />
           <EquipmentList
             items={overview.items}
@@ -176,8 +182,14 @@ export function EquipmentPage({ csrfToken }) {
                 label: item.assetCode,
               })
             }
-            onEdit={setEditingItem}
-            onEditBatch={setEditingBatch}
+            onEdit={(item) => {
+              setShowAddForm(false);
+              setEditingItem(item);
+            }}
+            onEditBatch={(item) => {
+              setShowAddForm(false);
+              setEditingBatch(item);
+            }}
             onRepair={setRepairTarget}
           />
         </div>
@@ -204,6 +216,7 @@ export function EquipmentPage({ csrfToken }) {
         <RepairList
           repairs={overview.repairs}
           onEdit={(repair) => {
+            setShowAddForm(false);
             setEditingRepair(repair);
             setTab('EQUIPMENT');
           }}

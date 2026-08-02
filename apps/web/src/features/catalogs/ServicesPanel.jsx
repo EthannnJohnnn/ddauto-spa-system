@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useEditNavigation } from '../../hooks/useEditNavigation.js';
 
 export function ServicesPanel({ services, onSave, onStatus }) {
   const [editing, setEditing] = useState(null);
@@ -8,6 +9,7 @@ export function ServicesPanel({ services, onSave, onStatus }) {
   const [sortOrder, setSortOrder] = useState('0');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const editRegionRef = useEditNavigation(editing);
 
   useEffect(() => {
     setName(editing?.name ?? '');
@@ -43,8 +45,9 @@ export function ServicesPanel({ services, onSave, onStatus }) {
   return (
     <div className="grid gap-6 xl:grid-cols-[22rem_1fr]">
       <form
-        className="h-fit rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
+        className="h-fit scroll-mt-28 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
         onSubmit={handleSubmit}
+        ref={editRegionRef}
       >
         <p className="text-sm font-semibold text-teal-700">
           {editing ? 'Edit service' : 'Add service'}

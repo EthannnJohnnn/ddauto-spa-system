@@ -7,7 +7,7 @@ import { hashPassword } from '../auth/auth.crypto.js';
 const OWNER = {
   username: 'owner',
   displayName: 'Owner',
-  password: 'SecureOwner123',
+  password: 'owner123',
 };
 
 describe('purchases and expenses API', () => {
@@ -292,7 +292,7 @@ async function createOwnerAgent(app) {
 }
 
 async function createStaffAgent(database, app) {
-  const password = 'SecureStaff123';
+  const password = 'staff123';
   const passwordRecord = await hashPassword(password);
   const now = new Date().toISOString();
   database

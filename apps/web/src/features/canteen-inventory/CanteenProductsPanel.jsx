@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { centavosToInput, formatPeso, inputToCentavos } from '../catalogs/catalog-formatters.js';
+import { useEditNavigation } from '../../hooks/useEditNavigation.js';
 
 export function CanteenProductsPanel({ products, businessDate, onSave, onStatus }) {
   const [editing, setEditing] = useState(null);
@@ -7,6 +8,7 @@ export function CanteenProductsPanel({ products, businessDate, onSave, onStatus 
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [search, setSearch] = useState('');
+  const editRegionRef = useEditNavigation(editing);
   const visibleProducts = useMemo(() => {
     const query = search.trim().toLowerCase();
     if (!query) return products;
@@ -58,8 +60,9 @@ export function CanteenProductsPanel({ products, businessDate, onSave, onStatus 
   return (
     <div className="grid gap-6 xl:grid-cols-[23rem_minmax(0,1fr)]">
       <form
-        className="h-fit rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
+        className="h-fit scroll-mt-28 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
         onSubmit={handleSubmit}
+        ref={editRegionRef}
       >
         <div className="flex items-start justify-between gap-3">
           <div>

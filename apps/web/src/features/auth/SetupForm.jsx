@@ -65,9 +65,9 @@ export function SetupForm({ onSetup }) {
         <FormField
           autoComplete="new-password"
           label="Password"
-          minLength="12"
+          maxLength="8"
           onChange={(event) => update('password', event.target.value)}
-          placeholder="At least 12 characters"
+          placeholder="Up to 8 characters"
           required
           type="password"
           value={values.password}
@@ -75,16 +75,14 @@ export function SetupForm({ onSetup }) {
         <FormField
           autoComplete="new-password"
           label="Confirm password"
-          minLength="12"
+          maxLength="8"
           onChange={(event) => update('confirmPassword', event.target.value)}
           placeholder="Repeat the password"
           required
           type="password"
           value={values.confirmPassword}
         />
-        <p className="text-sm leading-6 text-slate-500">
-          Use at least 12 characters with uppercase, lowercase, and a number.
-        </p>
+        <p className="text-sm leading-6 text-slate-500">Use any password up to 8 characters.</p>
         <SubmitButton busy={busy}>Create owner account</SubmitButton>
       </form>
     </AuthLayout>

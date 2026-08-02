@@ -65,7 +65,7 @@ export function ResetPasswordForm({ onCancel, onReset }) {
         <FormField
           autoComplete="new-password"
           label="New password"
-          minLength="12"
+          maxLength="8"
           onChange={(event) => update('newPassword', event.target.value)}
           required
           type="password"
@@ -74,7 +74,7 @@ export function ResetPasswordForm({ onCancel, onReset }) {
         <FormField
           autoComplete="new-password"
           label="Confirm new password"
-          minLength="12"
+          maxLength="8"
           onChange={(event) => update('confirmPassword', event.target.value)}
           required
           type="password"

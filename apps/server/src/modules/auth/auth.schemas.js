@@ -10,11 +10,8 @@ const username = z
 
 const password = z
   .string()
-  .min(12, 'Password must contain at least 12 characters.')
-  .max(128, 'Password cannot exceed 128 characters.')
-  .refine((value) => /[a-z]/.test(value), 'Password must include a lowercase letter.')
-  .refine((value) => /[A-Z]/.test(value), 'Password must include an uppercase letter.')
-  .refine((value) => /[0-9]/.test(value), 'Password must include a number.');
+  .min(1, 'Password is required.')
+  .max(8, 'Password cannot exceed 8 characters.');
 
 export const setupSchema = z
   .object({
@@ -27,7 +24,7 @@ export const setupSchema = z
 export const loginSchema = z
   .object({
     username,
-    password: z.string().min(1).max(128),
+    password: z.string().min(1).max(8),
   })
   .strict();
 

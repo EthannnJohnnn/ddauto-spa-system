@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { inputToCentavos, centavosToInput, formatPeso } from './catalog-formatters.js';
+import { useEditNavigation } from '../../hooks/useEditNavigation.js';
 
 const emptyForm = {
   displayName: '',
@@ -13,6 +14,7 @@ export function EmployeesPanel({ employees, onSave, onStatus }) {
   const [values, setValues] = useState(emptyForm);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const editRegionRef = useEditNavigation(editing);
 
   useEffect(() => {
     if (editing) {
@@ -54,8 +56,9 @@ export function EmployeesPanel({ employees, onSave, onStatus }) {
   return (
     <div className="grid gap-6 xl:grid-cols-[22rem_1fr]">
       <form
-        className="h-fit rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
+        className="h-fit scroll-mt-28 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
         onSubmit={handleSubmit}
+        ref={editRegionRef}
       >
         <p className="text-sm font-semibold text-teal-700">
           {editing ? 'Edit employee' : 'Add employee'}

@@ -3,7 +3,7 @@ import request from 'supertest';
 import { createApp } from '../../app.js';
 import { openDatabase } from '../../db/database.js';
 
-const OWNER = { username: 'owner', displayName: 'Owner', password: 'SecureOwner123' };
+const OWNER = { username: 'owner', displayName: 'Owner', password: 'owner123' };
 
 describe('dashboard notes API', () => {
   let database;

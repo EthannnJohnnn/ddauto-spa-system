@@ -392,6 +392,13 @@ export class ServiceSalesService {
 
   assertPayrollOpen(businessDate) {
     this.dateGuard?.assertOpen(businessDate);
+    if (this.repository.isSalaryPaidDate(businessDate)) {
+      throw new AppError(
+        409,
+        'SALARY_PAYMENT_DATE_PAID',
+        'Void the salary payment before changing attendance or service work on this date.',
+      );
+    }
     if (this.repository.isPayrollDateClosed(businessDate)) {
       throw new AppError(
         409,

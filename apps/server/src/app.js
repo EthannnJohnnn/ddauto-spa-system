@@ -170,7 +170,7 @@ export function createApp({ database, runtimeConfig = getRuntimeConfig() }) {
   app.use('/api/v1/payroll', payrollRouter);
   app.use('/api/v1/reports', reportsRouter);
   app.use('/api/v1/daily-close', dailyCloseRouter);
-  app.use('/api/v1/period-close', periodCloseRouter);
+  app.use('/api/v1/salary-payments', periodCloseRouter);
   app.use('/api/v1/equipment', equipmentRouter);
 
   if (existsSync(webDistDirectory)) {

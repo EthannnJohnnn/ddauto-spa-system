@@ -8,7 +8,7 @@ import { AuthService } from './auth.service.js';
 const OWNER = {
   username: 'owner',
   displayName: 'DD Auto Spa Owner',
-  password: 'SecureOwner123',
+  password: 'anything',
 };
 
 describe('authentication API', () => {
@@ -36,12 +36,12 @@ describe('authentication API', () => {
       authenticated: false,
     });
 
-    const weakPassword = await agent.post('/api/v1/auth/setup').send({
+    const longPassword = await agent.post('/api/v1/auth/setup').send({
       username: 'owner',
-      password: 'short',
+      password: '123456789',
     });
-    expect(weakPassword.status).toBe(400);
-    expect(weakPassword.body.error.code).toBe('VALIDATION_ERROR');
+    expect(longPassword.status).toBe(400);
+    expect(longPassword.body.error.code).toBe('VALIDATION_ERROR');
 
     const setup = await agent.post('/api/v1/auth/setup').send(OWNER);
 
@@ -85,11 +85,11 @@ describe('authentication API', () => {
 
     const unknownUser = await agent.post('/api/v1/auth/login').send({
       username: 'unknown',
-      password: 'AnythingAtAll123',
+      password: 'unknown1',
     });
     const wrongPassword = await agent.post('/api/v1/auth/login').send({
       username: OWNER.username,
-      password: 'IncorrectPassword123',
+      password: 'wrong123',
     });
     expect(unknownUser.body.error).toEqual(wrongPassword.body.error);
 
@@ -111,7 +111,7 @@ describe('authentication API', () => {
   it('uses each recovery code once and rotates it after a password reset', async () => {
     const agent = request.agent(app);
     const setup = await agent.post('/api/v1/auth/setup').send(OWNER);
-    const newPassword = 'ReplacementOwner456';
+    const newPassword = '!new123!';
 
     const reset = await agent.post('/api/v1/auth/reset-password').send({
       username: OWNER.username,
@@ -125,7 +125,7 @@ describe('authentication API', () => {
     const reusedCode = await request(app).post('/api/v1/auth/reset-password').send({
       username: OWNER.username,
       recoveryCode: setup.body.recoveryCode,
-      newPassword: 'AnotherPassword789',
+      newPassword: 'next123!',
     });
     expect(reusedCode.status).toBe(401);
     expect(reusedCode.body.error.code).toBe('INVALID_RECOVERY_CODE');
@@ -161,12 +161,12 @@ describe('authentication API', () => {
       request(app).post('/api/v1/auth/reset-password').send({
         username: savedUsername,
         recoveryCode: successfulSetup.body.recoveryCode,
-        newPassword: 'ConcurrentPassword123',
+        newPassword: 'first123',
       }),
       request(app).post('/api/v1/auth/reset-password').send({
         username: savedUsername,
         recoveryCode: successfulSetup.body.recoveryCode,
-        newPassword: 'ConcurrentPassword456',
+        newPassword: 'second12',
       }),
     ]);
     const resetStatuses = resetResponses.map((response) => response.status).sort();

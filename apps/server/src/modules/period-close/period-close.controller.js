@@ -6,12 +6,12 @@ export function createPeriodCloseController(service) {
     history(_request, response) {
       response.json(service.history());
     },
-    close(request, response) {
-      response.status(201).json(service.close(request.validatedBody, request.auth.user.id));
+    pay(request, response) {
+      response.status(201).json(service.pay(request.validatedBody, request.auth.user.id));
     },
-    reopen(request, response) {
+    voidPayment(request, response) {
       response.json(
-        service.reopen(
+        service.void(
           request.validatedParams.id,
           request.validatedBody.reason,
           request.auth.user.id,

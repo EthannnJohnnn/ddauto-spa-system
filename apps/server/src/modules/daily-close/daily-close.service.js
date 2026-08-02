@@ -114,13 +114,6 @@ export class BusinessDateGuard {
   }
 
   assertOpen(businessDate) {
-    if (this.repository.findActivePeriodForDate(businessDate)) {
-      throw new AppError(
-        409,
-        'PERIOD_CLOSE_DATE_CLOSED',
-        'Reopen the Period Close before changing records on this date.',
-      );
-    }
     if (this.repository.findClosedRun(businessDate)) {
       throw new AppError(
         409,

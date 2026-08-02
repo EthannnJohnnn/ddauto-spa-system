@@ -4,7 +4,7 @@ import { createApp } from '../../app.js';
 import { openDatabase } from '../../db/database.js';
 
 const BUSINESS_DATE = '2026-07-26';
-const OWNER = { username: 'owner', displayName: 'Owner', password: 'SecureOwner123' };
+const OWNER = { username: 'owner', displayName: 'Owner', password: 'owner123' };
 
 describe('daily close API', () => {
   let database;

@@ -7,7 +7,7 @@ import { openDatabase } from '../../db/database.js';
 const OWNER = {
   username: 'owner',
   displayName: 'Owner',
-  password: 'SecureOwner123',
+  password: 'owner123',
 };
 
 describe('combined reports API', () => {
@@ -52,6 +52,8 @@ describe('combined reports API', () => {
       estimatedGrossProfitCentavos: 116_000,
       estimatedNetCentavos: 68_000,
       cashMovementCentavos: 77_000,
+      operatingProfitCentavos: 112_000,
+      totalServiced: 2,
       serviceTransactionCount: 1,
       tireTransactionCount: 1,
       canteenTransactionCount: 1,
@@ -79,16 +81,34 @@ describe('combined reports API', () => {
     ]);
     expect(response.body.operationalAlerts.equipmentAttention).toEqual([]);
     expect(response.body.activityDayCount).toBe(1);
+    expect(response.body.reportBoard).toMatchObject({
+      totalServiced: 2,
+      purchasesCentavos: 25_000,
+      directProductCostCentavos: 34_000,
+      externalContractorCostCentavos: 10_000,
+    });
+    expect(response.body.reportBoard.incomeBreakdown).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ label: 'Carwash', amountCentavos: 70_000 }),
+        expect.objectContaining({ label: 'Painting', amountCentavos: 30_000 }),
+        expect.objectContaining({ label: 'Tire Sales', amountCentavos: 50_000 }),
+      ]),
+    );
+    expect(response.body.reportBoard.expenseBreakdown).toEqual([
+      expect.objectContaining({ label: 'Salaries', amountCentavos: 40_000 }),
+      expect.objectContaining({ label: 'Staff Meals', amountCentavos: 5_000 }),
+      expect.objectContaining({ label: 'Utilities', amountCentavos: 3_000 }),
+    ]);
   });
 
-  it('generates an owner-only Excel workbook for the requested 30-day period', async () => {
+  it('generates an owner-only Excel workbook for the selected period', async () => {
     const unauthenticated = await request(app).get(
       '/api/v1/reports/excel?start=2026-06-21&end=2026-07-20',
     );
     expect(unauthenticated.status).toBe(401);
 
     const owner = await createOwnerAgent(app);
-    const invalidRange = await owner.get('/api/v1/reports/excel?start=2026-07-01&end=2026-07-31');
+    const invalidRange = await owner.get('/api/v1/reports/excel?start=2026-07-31&end=2026-07-01');
     expect(invalidRange.status).toBe(400);
 
     seedReportData(database);
@@ -126,10 +146,10 @@ describe('combined reports API', () => {
     expect(workbook.getWorksheet('Daily Summary').getCell('Q34').value).toMatchObject({
       formula: 'SUM(Q4:Q33)',
     });
-    expect(workbook.getWorksheet('Daily Summary').getCell('R34').value).toMatchObject({
-      formula: 'SUM(R4:R33)',
+    expect(workbook.getWorksheet('Daily Summary').getCell('T34').value).toMatchObject({
+      formula: 'SUM(T4:T33)',
     });
-    expect(workbook.getWorksheet('Daily Summary').getCell('S33').value).toBe('OPEN');
+    expect(workbook.getWorksheet('Daily Summary').getCell('U33').value).toBe('OPEN');
     expect(workbook.getWorksheet('Service Sales').getCell('G4').value).toBe(1000);
   });
 });

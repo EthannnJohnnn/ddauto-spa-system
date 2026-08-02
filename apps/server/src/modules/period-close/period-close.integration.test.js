@@ -7,10 +7,10 @@ const DATES = ['2026-07-01', '2026-07-02', '2026-07-03'];
 const OWNER = {
   username: 'owner',
   displayName: 'Owner',
-  password: 'SecureOwner123',
+  password: 'owner123',
 };
 
-describe('Period Close API', () => {
+describe('Salary Payments API', () => {
   let database;
   let app;
 
@@ -21,7 +21,7 @@ describe('Period Close API', () => {
 
   afterEach(() => database.close());
 
-  it('closes reviewed employee days as one paid period and reopens the whole range', async () => {
+  it('pays reviewed employee days and can void the payment', async () => {
     const context = await createContext(app);
     await createDays(context);
 
@@ -37,17 +37,17 @@ describe('Period Close API', () => {
       });
     expect(adjusted.status).toBe(200);
     const needsReview = await context.owner.agent.get(
-      '/api/v1/period-close/preview?start=2026-07-01&end=2026-07-03',
+      '/api/v1/salary-payments/preview?start=2026-07-01&end=2026-07-03',
     );
-    expect(needsReview.body.canClose).toBe(false);
+    expect(needsReview.body.canPay).toBe(false);
     expect(needsReview.body.unreviewedDates).toEqual([DATES[1]]);
     await reviewDate(context, DATES[1]);
 
     const preview = await context.owner.agent.get(
-      '/api/v1/period-close/preview?start=2026-07-01&end=2026-07-03',
+      '/api/v1/salary-payments/preview?start=2026-07-01&end=2026-07-03',
     );
     expect(preview.status).toBe(200);
-    expect(preview.body.canClose).toBe(true);
+    expect(preview.body.canPay).toBe(true);
     expect(preview.body.summary.totalSalaryCentavos).toBe(135_000);
     expect(preview.body.employeeTotals[0]).toMatchObject({
       employeeName: 'Orlan',
@@ -55,13 +55,13 @@ describe('Period Close API', () => {
       dayCount: 3,
     });
 
-    const closed = await context.owner.agent
-      .post('/api/v1/period-close/close')
+    const paid = await context.owner.agent
+      .post('/api/v1/salary-payments/pay')
       .set('x-csrf-token', context.owner.csrfToken)
-      .send({ start: DATES[0], end: DATES[2], closeNote: '' });
-    expect(closed.status).toBe(201);
-    expect(closed.body).toMatchObject({
-      status: 'CLOSED',
+      .send({ start: DATES[0], end: DATES[2], note: '' });
+    expect(paid.status).toBe(201);
+    expect(paid.body).toMatchObject({
+      status: 'PAID',
       start: DATES[0],
       end: DATES[2],
       totalSalaryCentavos: 135_000,
@@ -78,7 +78,7 @@ describe('Period Close API', () => {
          FROM expense_transactions WHERE period_close_run_id = ?
          ORDER BY business_date, source_type`,
       )
-      .all(closed.body.id);
+      .all(paid.body.id);
     expect(expenses.filter((expense) => expense.source_type === 'PAYROLL')).toEqual([
       expect.objectContaining({
         business_date: DATES[0],
@@ -105,7 +105,9 @@ describe('Period Close API', () => {
       mealCentavos: 15_000,
       expenseCentavos: 150_000,
     });
-    expect(report.body.dailyBreakdown.every((day) => day.periodCloseStatus === 'PAID')).toBe(true);
+    expect(report.body.dailyBreakdown.every((day) => day.salaryPaymentStatus === 'PAID')).toBe(
+      true,
+    );
 
     const locked = await context.owner.agent
       .put('/api/v1/service-sales/attendance')
@@ -118,21 +120,21 @@ describe('Period Close API', () => {
         salaryOverrideCentavos: 60_000,
       });
     expect(locked.status).toBe(409);
-    expect(locked.body.error.code).toBe('PERIOD_CLOSE_DATE_CLOSED');
+    expect(locked.body.error.code).toBe('SALARY_PAYMENT_DATE_PAID');
 
-    const reopened = await context.owner.agent
-      .post(`/api/v1/period-close/${closed.body.id}/reopen`)
+    const voided = await context.owner.agent
+      .post(`/api/v1/salary-payments/${paid.body.id}/void`)
       .set('x-csrf-token', context.owner.csrfToken)
       .send({ reason: '' });
-    expect(reopened.status).toBe(200);
-    expect(reopened.body.status).toBe('REOPENED');
+    expect(voided.status).toBe(200);
+    expect(voided.body.status).toBe('VOIDED');
     expect(
       database
         .prepare(
           `SELECT COUNT(*) AS count FROM expense_transactions
            WHERE period_close_run_id = ? AND status = 'ACTIVE'`,
         )
-        .get(closed.body.id).count,
+        .get(paid.body.id).count,
     ).toBe(0);
 
     const openAgain = await context.owner.agent.get('/api/v1/attendance/open?through=2026-07-03');
@@ -140,20 +142,20 @@ describe('Period Close API', () => {
     expect(openAgain.body.days.every((day) => !day.reviewed)).toBe(true);
   });
 
-  it('requires review, supports a partial close, and leaves other dates unpaid', async () => {
+  it('requires review, supports a partial payment, and leaves other dates unpaid', async () => {
     const context = await createContext(app);
     await createDays(context, { review: false });
 
     const blocked = await context.owner.agent
-      .post('/api/v1/period-close/close')
+      .post('/api/v1/salary-payments/pay')
       .set('x-csrf-token', context.owner.csrfToken)
       .send({ start: DATES[0], end: DATES[0] });
     expect(blocked.status).toBe(409);
-    expect(blocked.body.error.code).toBe('PERIOD_CLOSE_REVIEW_REQUIRED');
+    expect(blocked.body.error.code).toBe('SALARY_PAYMENT_REVIEW_REQUIRED');
 
     await reviewDate(context, DATES[0]);
     const partial = await context.owner.agent
-      .post('/api/v1/period-close/close')
+      .post('/api/v1/salary-payments/pay')
       .set('x-csrf-token', context.owner.csrfToken)
       .send({ start: DATES[0], end: DATES[0] });
     expect(partial.status).toBe(201);
@@ -188,7 +190,7 @@ describe('Period Close API', () => {
     }
   });
 
-  it('rejects ranges longer than 31 days and overlapping active closes', async () => {
+  it('accepts mixed paid ranges and rejects ranges longer than 31 days', async () => {
     const context = await createContext(app);
     await createDays(context);
     for (const [end, dayCount] of [
@@ -197,35 +199,35 @@ describe('Period Close API', () => {
       ['2026-07-31', 31],
     ]) {
       const range = await context.owner.agent.get(
-        `/api/v1/period-close/preview?start=2026-07-01&end=${end}`,
+        `/api/v1/salary-payments/preview?start=2026-07-01&end=${end}`,
       );
       expect(range.status).toBe(200);
       expect(range.body.period.dayCount).toBe(dayCount);
     }
-    const closed = await context.owner.agent
-      .post('/api/v1/period-close/close')
+    const paid = await context.owner.agent
+      .post('/api/v1/salary-payments/pay')
       .set('x-csrf-token', context.owner.csrfToken)
       .send({ start: DATES[0], end: DATES[2] });
-    expect(closed.status).toBe(201);
+    expect(paid.status).toBe(201);
 
     const overlap = await context.owner.agent.get(
-      '/api/v1/period-close/preview?start=2026-07-02&end=2026-07-04',
+      '/api/v1/salary-payments/preview?start=2026-07-02&end=2026-07-04',
     );
-    expect(overlap.status).toBe(409);
-    expect(overlap.body.error.code).toBe('PERIOD_CLOSE_OVERLAP');
+    expect(overlap.status).toBe(200);
+    expect(overlap.body.alreadyPaidDayCount).toBe(2);
 
     const tooLong = await context.owner.agent.get(
-      '/api/v1/period-close/preview?start=2026-06-01&end=2026-07-02',
+      '/api/v1/salary-payments/preview?start=2026-06-01&end=2026-07-02',
     );
     expect(tooLong.status).toBe(400);
-    expect(tooLong.body.error.code).toBe('PERIOD_CLOSE_TOO_LONG');
+    expect(tooLong.body.error.code).toBe('SALARY_PAYMENT_TOO_LONG');
 
     const futureDate = localDateAfter(1);
     const future = await context.owner.agent.get(
-      `/api/v1/period-close/preview?start=${futureDate}&end=${futureDate}`,
+      `/api/v1/salary-payments/preview?start=${futureDate}&end=${futureDate}`,
     );
     expect(future.status).toBe(400);
-    expect(future.body.error.code).toBe('PERIOD_CLOSE_FUTURE_DATE');
+    expect(future.body.error.code).toBe('SALARY_PAYMENT_FUTURE_DATE');
   });
 });
 

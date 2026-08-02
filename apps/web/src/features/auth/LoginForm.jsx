@@ -66,6 +66,7 @@ export function LoginForm({ onLogin, onForgotPassword }) {
           <FormField
             autoComplete="current-password"
             label="Password"
+            maxLength="8"
             name="password"
             onChange={(event) => setValues({ ...values, password: event.target.value })}
             placeholder="Enter password"

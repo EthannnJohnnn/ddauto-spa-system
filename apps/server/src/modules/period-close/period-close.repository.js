@@ -14,9 +14,10 @@ export class PeriodCloseRepository {
   findActiveForDate(businessDate) {
     return this.database
       .prepare(
-        `SELECT * FROM period_close_runs
-         WHERE status = 'CLOSED' AND ? BETWEEN start_date AND end_date
-         ORDER BY id DESC LIMIT 1`,
+        `SELECT run.* FROM period_close_runs run
+         JOIN period_close_days day ON day.period_close_run_id = run.id
+         WHERE run.status = 'CLOSED' AND day.business_date = ?
+         ORDER BY run.id DESC LIMIT 1`,
       )
       .get(businessDate);
   }
@@ -202,7 +203,7 @@ export class PeriodCloseRepository {
         input.categoryId,
         input.categoryName,
         input.description,
-        `PERIOD-CLOSE-${input.runId}-${input.businessDate}`,
+        `SALARY-PAYMENT-${input.runId}-${input.businessDate}`,
         input.amountCentavos,
         input.notes,
         input.sourceType,
@@ -215,7 +216,7 @@ export class PeriodCloseRepository {
       );
   }
 
-  reopenRun(runId, reason, actorUserId, now, start, end) {
+  reopenRun(runId, reason, actorUserId, now) {
     this.database
       .prepare(
         `UPDATE period_close_runs
@@ -231,7 +232,12 @@ export class PeriodCloseRepository {
       )
       .run(reason || null, actorUserId, now, runId);
     this.database
-      .prepare('DELETE FROM attendance_day_reviews WHERE business_date BETWEEN ? AND ?')
-      .run(start, end);
+      .prepare(
+        `DELETE FROM attendance_day_reviews
+         WHERE business_date IN (
+           SELECT business_date FROM period_close_days WHERE period_close_run_id = ?
+         )`,
+      )
+      .run(runId);
   }
 }

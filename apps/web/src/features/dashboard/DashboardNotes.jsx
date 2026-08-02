@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { AppIcon } from '../../components/AppIcon.jsx';
+import { useEditNavigation } from '../../hooks/useEditNavigation.js';
 import {
   archiveDashboardNote,
   createDashboardNote,
@@ -16,6 +17,7 @@ export function DashboardNotes({ csrfToken }) {
   const [formOpen, setFormOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const editRegionRef = useEditNavigation(editingId);
 
   useEffect(() => {
     let active = true;
@@ -106,8 +108,9 @@ export function DashboardNotes({ csrfToken }) {
 
       {formOpen && (
         <form
-          className="mt-5 grid gap-4 rounded-2xl border border-blue-100 bg-blue-50/55 p-4 lg:grid-cols-[minmax(12rem,0.7fr)_minmax(18rem,1.3fr)_auto] lg:items-end"
+          className="mt-5 grid scroll-mt-28 gap-4 rounded-2xl border border-blue-100 bg-blue-50/55 p-4 lg:grid-cols-[minmax(12rem,0.7fr)_minmax(18rem,1.3fr)_auto] lg:items-end"
           onSubmit={handleSubmit}
+          ref={editRegionRef}
         >
           <label className="text-sm font-semibold text-slate-700">
             Title

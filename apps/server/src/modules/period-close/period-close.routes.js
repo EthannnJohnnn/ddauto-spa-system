@@ -5,7 +5,7 @@ import {
   periodCloseIdParamsSchema,
   periodCloseInputSchema,
   periodClosePreviewQuerySchema,
-  periodCloseReopenSchema,
+  periodCloseVoidSchema,
 } from './period-close.schemas.js';
 
 export function createPeriodCloseRouter(service, authMiddleware) {
@@ -15,13 +15,13 @@ export function createPeriodCloseRouter(service, authMiddleware) {
   router.use(authMiddleware.optionalAuth, authMiddleware.requireAuth);
   router.get('/preview', validateQuery(periodClosePreviewQuerySchema), controller.preview);
   router.get('/history', controller.history);
-  router.post('/close', ...ownerMutation, validateBody(periodCloseInputSchema), controller.close);
+  router.post('/pay', ...ownerMutation, validateBody(periodCloseInputSchema), controller.pay);
   router.post(
-    '/:id/reopen',
+    '/:id/void',
     ...ownerMutation,
     validateParams(periodCloseIdParamsSchema),
-    validateBody(periodCloseReopenSchema),
-    controller.reopen,
+    validateBody(periodCloseVoidSchema),
+    controller.voidPayment,
   );
   return router;
 }

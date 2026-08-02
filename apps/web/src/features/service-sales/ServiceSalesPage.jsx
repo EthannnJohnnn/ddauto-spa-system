@@ -3,6 +3,7 @@ import { getCatalogs } from '../catalogs/catalogs-api.js';
 import { formatPeso } from '../catalogs/catalog-formatters.js';
 import { ReasonDialog } from '../catalogs/ReasonDialog.jsx';
 import { getOpenAttendance } from '../attendance-payroll/attendance-api.js';
+import { useEditNavigation } from '../../hooks/useEditNavigation.js';
 import { DailyTransactions } from './DailyTransactions.jsx';
 import { ServiceTicketForm } from './ServiceTicketForm.jsx';
 import {
@@ -21,6 +22,7 @@ export function ServiceSalesPage({ csrfToken }) {
   const [statusTarget, setStatusTarget] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const editRegionRef = useEditNavigation(editingTicket);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -118,7 +120,7 @@ export function ServiceSalesPage({ csrfToken }) {
         </div>
       )}
 
-      <div className="mt-6">
+      <div className="mt-6 scroll-mt-28" ref={editRegionRef}>
         {dateStatus?.status === 'PAID' ? (
           <section className="rounded-2xl border border-emerald-200 bg-emerald-50 p-8 shadow-sm">
             <p className="text-sm font-bold uppercase tracking-[0.14em] text-emerald-700">
@@ -126,7 +128,7 @@ export function ServiceSalesPage({ csrfToken }) {
             </p>
             <h3 className="mt-2 text-2xl font-bold text-slate-950">This date is paid</h3>
             <p className="mt-3 max-w-xl leading-7 text-slate-600">
-              Reopen its Period Close before correcting transactions.
+              Void its salary payment before correcting salary-affecting work.
             </p>
           </section>
         ) : (

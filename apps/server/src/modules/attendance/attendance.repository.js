@@ -55,12 +55,14 @@ export class AttendanceRepository {
   findCloseForDate(businessDate) {
     const period = this.database
       .prepare(
-        `SELECT id, start_date, end_date, closed_at FROM period_close_runs
-         WHERE status = 'CLOSED' AND ? BETWEEN start_date AND end_date
-         ORDER BY id DESC LIMIT 1`,
+        `SELECT run.id, run.start_date, run.end_date, run.closed_at
+         FROM period_close_runs run
+         JOIN period_close_days day ON day.period_close_run_id = run.id
+         WHERE run.status = 'CLOSED' AND day.business_date = ?
+         ORDER BY run.id DESC LIMIT 1`,
       )
       .get(businessDate);
-    if (period) return { type: 'PERIOD_CLOSE', ...period };
+    if (period) return { type: 'SALARY_PAYMENT', ...period };
 
     const daily = this.database
       .prepare(

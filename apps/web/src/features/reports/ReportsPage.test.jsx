@@ -38,9 +38,11 @@ describe('Phase 9 reports interface', () => {
             canteenSalesCentavos: 10_000,
             totalSalesCentavos: 130_000,
             presentEmployeeCount: 2,
-            salaryCentavos: 80_000,
+            earnedSalaryCentavos: 80_000,
+            paidSalaryCentavos: 80_000,
+            unpaidSalaryCentavos: 0,
             mealCentavos: 10_000,
-            periodCloseStatus: 'PAID',
+            salaryPaymentStatus: 'PAID',
             expenseCentavos: 20_000,
             estimatedNetCentavos: 96_000,
             hasActivity: true,
@@ -50,7 +52,7 @@ describe('Phase 9 reports interface', () => {
     );
 
     expect(screen.getByText('Jul 20, 2026')).toBeInTheDocument();
-    expect(screen.getByText('Period status')).toBeInTheDocument();
+    expect(screen.getByText('Salary status')).toBeInTheDocument();
     expect(screen.getByText('PAID')).toBeInTheDocument();
     expect(screen.getByText('₱700.00')).toBeInTheDocument();
     expect(screen.getByText('₱500.00')).toBeInTheDocument();

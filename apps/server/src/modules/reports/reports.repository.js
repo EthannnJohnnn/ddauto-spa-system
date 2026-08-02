@@ -59,6 +59,43 @@ export class ReportsRepository {
       .all(start, end);
   }
 
+  listActiveServices() {
+    return this.database
+      .prepare(
+        `SELECT id, name, sort_order FROM services
+         WHERE is_active = 1
+         ORDER BY sort_order, name COLLATE NOCASE, id`,
+      )
+      .all();
+  }
+
+  listPaidEmployeeDays(start, end) {
+    return this.database
+      .prepare(
+        `SELECT day.employee_id, day.employee_name_snapshot, day.business_date,
+                day.final_salary_centavos, day.meal_cost_centavos
+         FROM period_close_employee_days day
+         JOIN period_close_runs run ON run.id = day.period_close_run_id
+         WHERE run.status = 'CLOSED' AND day.business_date BETWEEN ? AND ?
+         ORDER BY day.business_date, day.employee_name_snapshot COLLATE NOCASE`,
+      )
+      .all(start, end);
+  }
+
+  listLegacyPaidEmployeeDays(start, end) {
+    return this.database
+      .prepare(
+        `SELECT item.employee_id, item.employee_name_snapshot, run.business_date,
+                item.total_pay_centavos AS final_salary_centavos,
+                item.meal_cost_centavos
+         FROM payroll_run_items item
+         JOIN payroll_runs run ON run.id = item.payroll_run_id
+         WHERE run.status = 'CLOSED' AND run.business_date BETWEEN ? AND ?
+         ORDER BY run.business_date, item.employee_name_snapshot COLLATE NOCASE`,
+      )
+      .all(start, end);
+  }
+
   findActivePeriodDay(businessDate) {
     return this.database
       .prepare(
