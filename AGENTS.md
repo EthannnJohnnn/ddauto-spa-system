@@ -114,17 +114,18 @@
   expenses; manual expense endpoints must not modify them.
 - Synchronize purchase and repair corrections with their linked expenses, and never remove past
   expenses merely because equipment is archived.
-- Block dated purchase and repair cost changes after Period Close until the business date is
-  reopened.
+- Salary Payments do not lock equipment purchases or repair costs.
 
-## Attendance and Period Close rules
+## Attendance and Salary Payment rules
 
 - Daily final salary is the owner override when present, otherwise calculated salary.
 - Salary-affecting edits clear the day's attendance review.
-- Period Close accepts an inclusive owner-selected range of 1 to 31 non-future days.
-- Every date with attendance, salary, or service activity must be reviewed before closing.
-- Active Period Close ranges lock every dated business record in their range.
-- Reopening applies to the whole period, voids its salary and meal expenses, and clears reviews.
+- Salary Payments accept an inclusive owner-selected range of 1 to 31 non-future days.
+- Every unpaid date with attendance, salary, or service activity must be reviewed before payment.
+- Payments skip dates already paid and create salary and meal expenses on original work dates.
+- Paid attendance and salary-affecting service work require voiding the payment before correction.
+- Voiding applies to the whole payment, voids its salary and meal expenses, and clears reviews.
+- Salary Payments do not lock inventory, purchases, general expenses, or equipment records.
 - Keep legacy payroll and Daily Close tables immutable and continue honoring their date locks.
 
 ## Completion standard

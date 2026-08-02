@@ -11,7 +11,7 @@ The current foundation includes the local database, first-time owner setup, user
 login, protected SPA shell, session security, one-time password recovery, audit events, the
 owner-managed business catalogs, daily service transactions with attendance and payroll previews,
 an audited tire-sales and inventory ledger, an audited canteen-sales and stock ledger, purchases
-and expenses, combined reporting, a dedicated attendance workspace, audited Period Close snapshots,
+and expenses, combined reporting, a dedicated attendance workspace, audited salary payments,
 and an individual equipment condition register with linked purchase
 and repair expenses. Real business data is intentionally not included in the repository.
 
@@ -61,9 +61,9 @@ The production application is then available at `http://127.0.0.1:3000`.
 
 ## First-time setup and local data
 
-The first launch displays a one-time owner-account setup screen. The password must contain at
-least 12 characters, including uppercase, lowercase, and a number. Setup generates a printable
-one-time recovery code. The code is stored only as a hash and must be kept somewhere private.
+The first launch displays a one-time owner-account setup screen. The password may contain any
+characters and must be no longer than 8 characters. Setup generates a printable one-time recovery
+code. The code is stored only as a hash and must be kept somewhere private.
 
 By default, Windows business data is stored outside the source-code folder:
 
@@ -227,6 +227,8 @@ amount from its original source ledger:
 - A daily summary lists every calendar day in the selected period, including zero-activity days.
 - Separate transaction tabs show the individual service, tire, and canteen sale records. Voided
   records remain visible for audit but are excluded from totals.
+- The report summary groups income by service, expenses by category, and each employee's paid and
+  unpaid earned salary. Daily, weekly, monthly, and custom ranges drive both the screen and Excel.
 - Estimated gross profit subtracts tire and canteen sold-item cost snapshots plus outside-contractor
   labor. Estimated net then subtracts active operating expenses, including finalized payroll.
 - Cash movement subtracts stock purchases, expenses, and outside-contractor labor from collected
@@ -236,17 +238,18 @@ amount from its original source ledger:
 
 Report queries support at most 366 days at a time and require an authenticated local session.
 
-## Attendance and Period Close
+## Attendance and Salary Payments
 
 The **Attendance** page shows daily presence, meals, calculated salary, optional owner salary
 adjustments, review state, paid history, and running unpaid totals. Salary-affecting changes clear
 the day's review automatically.
 
-The **Period Close** page finalizes any owner-selected range from 1 to 31 days. Every active
-workforce date must be reviewed first. Closing snapshots daily finance and employee pay, creates
-salary and meal expenses on their original business dates, and locks all dated records in the
-range. Reopening unlocks the whole period, voids those generated expenses, and clears its reviews.
-Legacy payroll and Daily Close history remains available and continues to lock active legacy dates.
+The **Salary Payments** page pays reviewed, unpaid employee salary and meals for an owner-selected
+range of 1 to 31 days. It skips dates already paid, creates salary and meal expenses on their
+original work dates, and preserves a payment snapshot. Voiding a payment restores its unpaid
+salary, voids its generated expenses, and clears attendance reviews. Only paid attendance and
+salary-affecting service work require the payment to be voided before correction; inventory and
+other financial records remain editable. Legacy payroll and Daily Close history remains available.
 
 ## Equipment condition register
 
@@ -257,7 +260,7 @@ through audited archive workflows.
 
 Equipment purchases create one protected expense for the full batch. Repair costs create protected
 repair expenses. Corrections remain synchronized with their source workflow, appear exactly once in
-expenses, reports, and Period Close, and are locked when their business date has been closed.
+expenses and reports. Salary Payments do not lock equipment records.
 
 ## Public-repository safety
 

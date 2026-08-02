@@ -12,12 +12,21 @@ const tabs = [
 export function ReportsPage() {
   const [periodMode, setPeriodMode] = useState('MONTHLY');
   const [anchorDate, setAnchorDate] = useState(todayLocal());
+  const initialMonth = periodRange('MONTHLY', todayLocal());
+  const [customStart, setCustomStart] = useState(initialMonth.start);
+  const [customEnd, setCustomEnd] = useState(initialMonth.end);
   const [activeTab, setActiveTab] = useState('OVERVIEW');
   const [report, setReport] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [exporting, setExporting] = useState(false);
-  const period = useMemo(() => periodRange(periodMode, anchorDate), [periodMode, anchorDate]);
+  const period = useMemo(
+    () =>
+      periodMode === 'CUSTOM'
+        ? { start: customStart, end: customEnd }
+        : periodRange(periodMode, anchorDate),
+    [anchorDate, customEnd, customStart, periodMode],
+  );
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -29,18 +38,17 @@ export function ReportsPage() {
     } finally {
       setLoading(false);
     }
-  }, [period.end, period.start]);
+  }, [period.end, period.start, periodMode]);
 
   useEffect(() => {
     load();
   }, [load]);
 
   const exportExcel = async () => {
-    const exportPeriod = last30DaysRange(anchorDate);
     setExporting(true);
     setError('');
     try {
-      await downloadReportsExcel(exportPeriod.start, exportPeriod.end);
+      await downloadReportsExcel(period.start, period.end);
     } catch (exportError) {
       setError(exportError.message);
     } finally {
@@ -69,6 +77,16 @@ export function ReportsPage() {
               setReport(null);
               setPeriodMode(mode);
             }}
+            customEnd={customEnd}
+            customStart={customStart}
+            onCustomEndChange={(value) => {
+              setReport(null);
+              setCustomEnd(value);
+            }}
+            onCustomStartChange={(value) => {
+              setReport(null);
+              setCustomStart(value);
+            }}
             periodMode={periodMode}
           />
           <button
@@ -78,11 +96,8 @@ export function ReportsPage() {
             type="button"
           >
             <DownloadIcon />
-            {exporting ? 'Making Excel report…' : 'Download last 30 days as Excel'}
+            {exporting ? 'Making Excel report…' : 'Download selected report'}
           </button>
-          <p className="text-right text-xs text-slate-500">
-            Uses the 30 days ending {formatShortDate(anchorDate)}.
-          </p>
         </div>
       </div>
 
@@ -96,18 +111,7 @@ export function ReportsPage() {
         </div>
       )}
 
-      <PrimarySummary summary={report.summary} />
-      <SourceSummary summary={report.summary} />
-      <CashSummary summary={report.summary} />
-
-      <section className="mt-6 rounded-2xl border border-blue-200 bg-blue-50 p-5 text-sm leading-6 text-blue-950">
-        <p className="font-bold">How the totals are calculated</p>
-        <p className="mt-1">
-          Estimated net subtracts product costs, outside-contractor labor, and operating expenses
-          from sales. Cash movement uses stock purchases instead of product costs. Purchases are not
-          subtracted from estimated net because sold-item costs are already included there.
-        </p>
-      </section>
+      <ReportBoard board={report.reportBoard} />
 
       <div className="ui-tabs-shell">
         <div className="ui-tabs-row">
@@ -138,82 +142,127 @@ export function ReportsPage() {
   );
 }
 
-function PrimarySummary({ summary }) {
-  const cards = [
-    ['Combined sales', formatPeso(summary.totalSalesCentavos), 'All three sales sources'],
-    [
-      'Estimated gross profit',
-      formatPeso(summary.estimatedGrossProfitCentavos),
-      'After product and contractor costs',
-    ],
-    ['Operating expenses', formatPeso(summary.expenseCentavos), 'Includes finalized payroll'],
-    ['Estimated net', formatPeso(summary.estimatedNetCentavos), 'Gross profit less expenses'],
-  ];
-  return <CardGrid cards={cards} className="mt-7" />;
-}
-
-function SourceSummary({ summary }) {
-  const cards = [
-    [
-      'Service sales',
-      formatPeso(summary.serviceSalesCentavos),
-      `${summary.serviceTransactionCount} transaction(s)`,
-    ],
-    [
-      'Tire sales',
-      formatPeso(summary.tireSalesCentavos),
-      `${summary.tireTransactionCount} transaction(s)`,
-    ],
-    [
-      'Canteen sales',
-      formatPeso(summary.canteenSalesCentavos),
-      `${summary.canteenTransactionCount} transaction(s)`,
-    ],
-    [
-      'Direct sale costs',
-      formatPeso(summary.productCostCentavos + summary.externalLaborCentavos),
-      `${formatPeso(summary.productCostCentavos)} products · ${formatPeso(summary.externalLaborCentavos)} outside labor`,
-    ],
-  ];
-  return <CardGrid cards={cards} className="mt-4" muted />;
-}
-
-function CashSummary({ summary }) {
+function ReportBoard({ board }) {
+  const totals = board.totals;
   return (
-    <div className="mt-4 grid gap-4 md:grid-cols-2">
-      <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-        <p className="text-sm font-medium text-slate-500">Stock purchases paid</p>
-        <p className="mt-2 text-xl font-bold text-slate-950">
-          {formatPeso(summary.purchaseCentavos)}
-        </p>
-        <p className="mt-1 text-xs text-slate-500">Tire and canteen purchases from their ledgers</p>
-      </article>
-      <article className="rounded-2xl border border-teal-200 bg-teal-50 p-5 shadow-sm">
-        <p className="text-sm font-medium text-teal-800">Cash movement</p>
-        <p className="mt-2 text-xl font-bold text-teal-950">
-          {formatPeso(summary.cashMovementCentavos)}
-        </p>
-        <p className="mt-1 text-xs text-teal-800">
-          Sales less purchases, expenses, and outside labor
-        </p>
-      </article>
+    <section className="mt-7 overflow-hidden rounded-2xl border border-blue-200 bg-white shadow-sm">
+      <div className="flex flex-wrap items-center justify-between gap-3 bg-blue-950 px-5 py-4 text-white">
+        <h3 className="text-lg font-bold">Business summary</h3>
+        <span className="rounded-full bg-white/15 px-3 py-1 text-sm font-semibold">
+          {board.totalServiced} serviced
+        </span>
+      </div>
+
+      <div className="grid items-start gap-0 xl:grid-cols-[minmax(0,1.35fr)_minmax(17rem,0.65fr)]">
+        <div className="min-w-0 border-b border-blue-100 xl:border-b-0 xl:border-r">
+          <BreakdownStrip title="Sales income" rows={board.incomeBreakdown} />
+          <div className="grid border-t border-blue-100 sm:grid-cols-3">
+            <BoardTotal label="Total sales income" value={totals.totalSalesCentavos} />
+            <BoardTotal label="Operating expenses" value={totals.expenseCentavos} tone="amber" />
+            <BoardTotal
+              label="Profit"
+              note={`${formatPercent(totals.profitRateBasisPoints)} of sales`}
+              value={totals.operatingProfitCentavos}
+              tone="profit"
+            />
+          </div>
+          <div className="grid border-t border-blue-100 sm:grid-cols-3">
+            <BoardTotal label="Purchases" value={board.purchasesCentavos} compact />
+            <BoardTotal label="Product costs" value={board.directProductCostCentavos} compact />
+            <BoardTotal
+              label="Outside labor"
+              value={board.externalContractorCostCentavos}
+              compact
+            />
+          </div>
+        </div>
+
+        <div className="grid min-w-0 md:grid-cols-2 xl:grid-cols-1">
+          <BreakdownList title="Expense breakdown" rows={board.expenseBreakdown} />
+          <SalaryBreakdown rows={board.employeeSalaryBreakdown} />
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function BreakdownStrip({ title, rows }) {
+  return (
+    <div className="p-5">
+      <h4 className="text-xs font-bold uppercase tracking-[0.16em] text-blue-500">{title}</h4>
+      <div className="mt-3 overflow-x-auto pb-1">
+        <div className="grid min-w-max auto-cols-[10rem] grid-flow-col gap-2">
+          {rows.map((row) => (
+            <div className="rounded-xl border border-blue-100 bg-blue-50/60 p-3" key={row.key}>
+              <p className="truncate text-xs font-semibold text-slate-600" title={row.label}>
+                {row.label}
+              </p>
+              <p className="mt-1 font-bold text-blue-950">{formatPeso(row.amountCentavos)}</p>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
 
-function CardGrid({ cards, className, muted = false }) {
+function BoardTotal({ label, value, note, tone = 'blue', compact = false }) {
+  const tones = {
+    blue: 'bg-blue-50 text-blue-950',
+    amber: 'bg-amber-50 text-amber-950',
+    profit: value >= 0 ? 'bg-emerald-50 text-emerald-950' : 'bg-red-50 text-red-900',
+  };
   return (
-    <div className={`${className} grid gap-4 sm:grid-cols-2 xl:grid-cols-4`}>
-      {cards.map(([label, value, note]) => (
-        <article
-          className={`rounded-2xl border p-5 shadow-sm ${muted ? 'border-slate-200 bg-slate-50' : 'border-slate-200 bg-white'}`}
-          key={label}
-        >
-          <p className="text-sm font-medium text-slate-500">{label}</p>
-          <p className="mt-3 text-2xl font-bold tracking-tight text-slate-950">{value}</p>
-          <p className="mt-2 text-xs text-slate-500">{note}</p>
-        </article>
-      ))}
+    <div className={`border-r border-blue-100 p-4 last:border-r-0 ${tones[tone]}`}>
+      <p className="text-xs font-semibold uppercase tracking-wide opacity-70">{label}</p>
+      <p className={`${compact ? 'text-lg' : 'text-xl'} mt-1 font-black`}>{formatPeso(value)}</p>
+      {note && <p className="mt-1 text-xs font-semibold opacity-70">{note}</p>}
+    </div>
+  );
+}
+
+function BreakdownList({ title, rows }) {
+  return (
+    <div className="border-b border-blue-100 p-5 md:border-b-0 md:border-r xl:border-b xl:border-r-0">
+      <h4 className="font-bold text-blue-950">{title}</h4>
+      <div className="mt-3 max-h-56 space-y-2 overflow-y-auto pr-1">
+        {rows.length === 0 ? (
+          <p className="text-sm text-slate-500">No expenses.</p>
+        ) : (
+          rows.map((row) => (
+            <div className="flex justify-between gap-3 text-sm" key={row.label}>
+              <span className="min-w-0 truncate text-slate-600">{row.label}</span>
+              <strong>{formatPeso(row.amountCentavos)}</strong>
+            </div>
+          ))
+        )}
+      </div>
+    </div>
+  );
+}
+
+function SalaryBreakdown({ rows }) {
+  return (
+    <div className="p-5">
+      <h4 className="font-bold text-blue-950">Earned salary</h4>
+      <div className="mt-3 max-h-56 overflow-y-auto pr-1">
+        {rows.length === 0 ? (
+          <p className="text-sm text-slate-500">No salary recorded.</p>
+        ) : (
+          rows.map((row) => (
+            <div className="border-b border-slate-100 py-2 last:border-0" key={row.employeeId}>
+              <div className="flex justify-between gap-3 text-sm">
+                <span className="font-semibold">{row.employeeName}</span>
+                <strong>{formatPeso(row.earnedSalaryCentavos)}</strong>
+              </div>
+              <p className="mt-1 text-xs text-slate-500">
+                Paid {formatPeso(row.paidSalaryCentavos)} · Unpaid{' '}
+                {formatPeso(row.unpaidSalaryCentavos)}
+              </p>
+            </div>
+          ))
+        )}
+      </div>
     </div>
   );
 }
@@ -240,9 +289,11 @@ export function DailyBreakdownTable({ days }) {
                 'Canteen',
                 'Total sales',
                 'Present',
-                'Salary',
+                'Earned salary',
+                'Paid salary',
+                'Unpaid salary',
                 'Meals',
-                'Period status',
+                'Salary status',
                 'Expenses',
                 'Est. net',
               ].map((heading) => (
@@ -266,13 +317,15 @@ export function DailyBreakdownTable({ days }) {
                 <MoneyCell value={day.canteenSalesCentavos} />
                 <MoneyCell bold value={day.totalSalesCentavos} />
                 <td className="whitespace-nowrap px-4 py-3">{day.presentEmployeeCount}</td>
-                <MoneyCell value={day.salaryCentavos} />
+                <MoneyCell value={day.earnedSalaryCentavos} />
+                <MoneyCell value={day.paidSalaryCentavos} />
+                <MoneyCell value={day.unpaidSalaryCentavos} />
                 <MoneyCell value={day.mealCentavos} />
                 <td className="whitespace-nowrap px-4 py-3">
                   <span
-                    className={`rounded-full px-2 py-1 text-xs font-bold ${day.periodCloseStatus === 'OPEN' ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'}`}
+                    className={`rounded-full px-2 py-1 text-xs font-bold ${day.salaryPaymentStatus === 'OPEN' ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'}`}
                   >
-                    {day.periodCloseStatus}
+                    {day.salaryPaymentStatus}
                   </span>
                 </td>
                 <MoneyCell value={day.expenseCentavos} />
@@ -360,13 +413,22 @@ export function TransactionList({ transactions, source }) {
   );
 }
 
-function PeriodControls({ periodMode, anchorDate, onModeChange, onDateChange }) {
+function PeriodControls({
+  periodMode,
+  anchorDate,
+  customStart,
+  customEnd,
+  onModeChange,
+  onDateChange,
+  onCustomStartChange,
+  onCustomEndChange,
+}) {
   return (
     <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
       <div>
         <span className="mb-2 block text-sm font-semibold text-slate-600">View</span>
         <div className="ui-segmented">
-          {['DAILY', 'WEEKLY', 'MONTHLY'].map((mode) => (
+          {['DAILY', 'WEEKLY', 'MONTHLY', 'CUSTOM'].map((mode) => (
             <button
               className={`rounded-lg px-3 py-2 text-sm font-semibold ${periodMode === mode ? 'bg-teal-700 text-white' : 'text-slate-600 hover:bg-slate-100'}`}
               key={mode}
@@ -378,17 +440,35 @@ function PeriodControls({ periodMode, anchorDate, onModeChange, onDateChange }) 
           ))}
         </div>
       </div>
-      <label>
-        <span className="mb-2 block text-sm font-semibold text-slate-600">Reference date</span>
-        <input
-          className="rounded-xl border border-slate-300 bg-white px-4 py-3 font-semibold outline-none focus:border-teal-600"
-          onChange={(event) => event.target.value && onDateChange(event.target.value)}
-          required
-          type="date"
-          value={anchorDate}
-        />
-      </label>
+      {periodMode === 'CUSTOM' ? (
+        <div className="grid grid-cols-2 gap-2">
+          <DateControl label="Start" onChange={onCustomStartChange} value={customStart} />
+          <DateControl
+            label="End"
+            min={customStart}
+            onChange={onCustomEndChange}
+            value={customEnd}
+          />
+        </div>
+      ) : (
+        <DateControl label="Reference date" onChange={onDateChange} value={anchorDate} />
+      )}
     </div>
+  );
+}
+
+function DateControl({ label, onChange, ...props }) {
+  return (
+    <label>
+      <span className="mb-2 block text-sm font-semibold text-slate-600">{label}</span>
+      <input
+        className="w-full rounded-xl border border-slate-300 bg-white px-3 py-3 font-semibold outline-none focus:border-blue-600"
+        onChange={(event) => event.target.value && onChange(event.target.value)}
+        required
+        type="date"
+        {...props}
+      />
+    </label>
   );
 }
 
@@ -465,6 +545,10 @@ function formatShortDate(value) {
 
 function titleCase(value) {
   return value[0] + value.slice(1).toLowerCase();
+}
+
+function formatPercent(basisPoints) {
+  return `${(basisPoints / 100).toFixed(basisPoints % 100 === 0 ? 0 : 1)}%`;
 }
 
 function DownloadIcon() {

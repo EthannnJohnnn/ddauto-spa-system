@@ -56,10 +56,19 @@ export class ReportsService {
       };
     });
     const activeDays = dailyBreakdown.filter((day) => day.hasActivity);
+    const reportBoard = this.buildReportBoard({
+      start,
+      end,
+      transactions,
+      purchases,
+      expenses,
+      summary: summarizeDays(dailyBreakdown),
+    });
 
     return {
       period: { start, end },
-      summary: summarizeDays(dailyBreakdown),
+      summary: reportBoard.totals,
+      reportBoard,
       dailyBreakdown,
       transactions,
       purchases: purchases.sort(compareTransactions),
@@ -77,81 +86,142 @@ export class ReportsService {
     const periodDay = this.repository.findActivePeriodDay(businessDate);
     if (periodDay) {
       return {
-        ...mapPeriodDayFinancials(periodDay),
         presentEmployeeCount: periodDay.present_employee_count,
         salaryCentavos: periodDay.salary_centavos,
+        earnedSalaryCentavos: periodDay.salary_centavos,
+        paidSalaryCentavos: periodDay.salary_centavos,
+        unpaidSalaryCentavos: 0,
         mealCentavos: periodDay.meal_centavos,
-        periodCloseStatus: 'PAID',
-        periodCloseId: periodDay.close_id,
-        periodCloseStart: periodDay.start_date,
-        periodCloseEnd: periodDay.end_date,
+        salaryPaymentStatus: 'PAID',
+        salaryPaymentId: periodDay.close_id,
+        salaryPaymentStart: periodDay.start_date,
+        salaryPaymentEnd: periodDay.end_date,
       };
     }
-    const legacyClose = this.repository.findLegacyDailyCloseDay(businessDate);
     const legacy = this.repository.findLegacyPayrollDay(businessDate);
     if (legacy) {
       return {
-        ...(legacyClose ? mapLegacyDayFinancials(legacyClose) : {}),
         presentEmployeeCount: legacy.employee_count,
         salaryCentavos: legacy.total_salary_centavos,
+        earnedSalaryCentavos: legacy.total_salary_centavos,
+        paidSalaryCentavos: legacy.total_salary_centavos,
+        unpaidSalaryCentavos: 0,
         mealCentavos: legacy.total_meal_centavos,
-        periodCloseStatus: 'PAID (legacy)',
-        periodCloseId: legacy.close_id,
-        periodCloseStart: businessDate,
-        periodCloseEnd: businessDate,
+        salaryPaymentStatus: 'PAID (legacy)',
+        salaryPaymentId: legacy.close_id,
+        salaryPaymentStart: businessDate,
+        salaryPaymentEnd: businessDate,
       };
     }
     const attendance = this.attendanceService?.getDay(businessDate);
     return {
       presentEmployeeCount: attendance?.presentEmployeeCount ?? 0,
       salaryCentavos: attendance?.salaryCentavos ?? 0,
+      earnedSalaryCentavos: attendance?.salaryCentavos ?? 0,
+      paidSalaryCentavos: 0,
+      unpaidSalaryCentavos: attendance?.salaryCentavos ?? 0,
       mealCentavos: attendance?.mealCentavos ?? 0,
-      periodCloseStatus: 'OPEN',
-      periodCloseId: null,
-      periodCloseStart: null,
-      periodCloseEnd: null,
+      salaryPaymentStatus: 'OPEN',
+      salaryPaymentId: null,
+      salaryPaymentStart: null,
+      salaryPaymentEnd: null,
     };
   }
-}
 
-function mapPeriodDayFinancials(row) {
-  return {
-    serviceSalesCentavos: row.service_sales_centavos,
-    tireSalesCentavos: row.tire_sales_centavos,
-    canteenSalesCentavos: row.canteen_sales_centavos,
-    totalSalesCentavos: row.total_sales_centavos,
-    productCostCentavos: row.product_cost_centavos,
-    externalLaborCentavos: row.external_labor_centavos,
-    expenseCentavos: row.expense_centavos,
-    purchaseCentavos: row.purchase_centavos,
-    estimatedGrossProfitCentavos: row.estimated_gross_profit_centavos,
-    estimatedNetCentavos: row.estimated_net_centavos,
-    cashMovementCentavos: row.cash_movement_centavos,
-    serviceTransactionCount: row.service_transaction_count,
-    tireTransactionCount: row.tire_transaction_count,
-    canteenTransactionCount: row.canteen_transaction_count,
-    hasActivity: Boolean(row.had_activity),
-  };
-}
+  buildReportBoard({ start, end, transactions, purchases, expenses, summary }) {
+    const serviceAmounts = new Map(
+      this.repository.listActiveServices().map((service) => [service.name, 0]),
+    );
+    let totalServiced = 0;
+    for (const ticket of active(transactions.serviceSales)) {
+      for (const item of ticket.items) {
+        serviceAmounts.set(item.name, (serviceAmounts.get(item.name) ?? 0) + item.amountCentavos);
+        totalServiced += 1;
+      }
+    }
+    const incomeBreakdown = [
+      ...[...serviceAmounts].map(([label, amountCentavos]) => ({
+        key: `SERVICE:${label}`,
+        label,
+        amountCentavos,
+      })),
+      { key: 'TIRE', label: 'Tire Sales', amountCentavos: summary.tireSalesCentavos },
+      { key: 'CANTEEN', label: 'Canteen Sales', amountCentavos: summary.canteenSalesCentavos },
+    ];
+    const expenseAmounts = new Map();
+    for (const expense of active(expenses)) {
+      expenseAmounts.set(
+        expense.categoryName,
+        (expenseAmounts.get(expense.categoryName) ?? 0) + expense.amountCentavos,
+      );
+    }
+    const expenseBreakdown = [...expenseAmounts]
+      .map(([label, amountCentavos]) => ({ label, amountCentavos }))
+      .sort(
+        (left, right) =>
+          right.amountCentavos - left.amountCentavos || left.label.localeCompare(right.label),
+      );
+    const employeeSalaryBreakdown = this.buildEmployeeSalaryBreakdown(start, end);
+    const operatingProfitCentavos = summary.totalSalesCentavos - summary.expenseCentavos;
+    const totalSales = summary.totalSalesCentavos;
+    const totals = {
+      ...summary,
+      operatingProfitCentavos,
+      expenseRateBasisPoints: ratioBasisPoints(summary.expenseCentavos, totalSales),
+      profitRateBasisPoints: ratioBasisPoints(operatingProfitCentavos, totalSales),
+      totalServiced,
+    };
+    return {
+      totalServiced,
+      incomeBreakdown,
+      expenseBreakdown,
+      employeeSalaryBreakdown,
+      purchasesCentavos: sum(active(purchases).map((entry) => entry.totalCentavos)),
+      directProductCostCentavos: summary.productCostCentavos,
+      externalContractorCostCentavos: summary.externalLaborCentavos,
+      totals,
+    };
+  }
 
-function mapLegacyDayFinancials(row) {
-  return {
-    serviceSalesCentavos: row.service_sales_centavos,
-    tireSalesCentavos: row.tire_sales_centavos,
-    canteenSalesCentavos: row.canteen_sales_centavos,
-    totalSalesCentavos: row.total_sales_centavos,
-    productCostCentavos: row.product_cost_centavos,
-    externalLaborCentavos: row.external_labor_centavos,
-    expenseCentavos: row.expense_centavos,
-    purchaseCentavos: row.purchase_centavos,
-    estimatedGrossProfitCentavos: row.estimated_gross_profit_centavos,
-    estimatedNetCentavos: row.estimated_net_centavos,
-    cashMovementCentavos: row.cash_movement_centavos,
-    serviceTransactionCount: row.service_transaction_count,
-    tireTransactionCount: row.tire_transaction_count,
-    canteenTransactionCount: row.canteen_transaction_count,
-    hasActivity: true,
-  };
+  buildEmployeeSalaryBreakdown(start, end) {
+    const totals = new Map();
+    const add = (employee, field) => {
+      const current = totals.get(employee.employee_id) ?? {
+        employeeId: employee.employee_id,
+        employeeName: employee.employee_name_snapshot,
+        paidSalaryCentavos: 0,
+        unpaidSalaryCentavos: 0,
+      };
+      current[field] += employee.final_salary_centavos;
+      totals.set(employee.employee_id, current);
+    };
+    for (const employee of this.repository.listPaidEmployeeDays(start, end)) {
+      add(employee, 'paidSalaryCentavos');
+    }
+    for (const employee of this.repository.listLegacyPaidEmployeeDays(start, end)) {
+      add(employee, 'paidSalaryCentavos');
+    }
+    for (const businessDate of dateRange(start, end)) {
+      const attendance = this.attendanceService?.getDay(businessDate);
+      if (!attendance || attendance.status !== 'OPEN') continue;
+      for (const employee of attendance.employees) {
+        add(
+          {
+            employee_id: employee.employeeId,
+            employee_name_snapshot: employee.employeeName,
+            final_salary_centavos: employee.finalSalaryCentavos,
+          },
+          'unpaidSalaryCentavos',
+        );
+      }
+    }
+    return [...totals.values()]
+      .map((employee) => ({
+        ...employee,
+        earnedSalaryCentavos: employee.paidSalaryCentavos + employee.unpaidSalaryCentavos,
+      }))
+      .sort((left, right) => left.employeeName.localeCompare(right.employeeName));
+  }
 }
 
 function mapEquipmentAttention(row) {
@@ -332,6 +402,9 @@ function summarizeDays(days) {
     'canteenTransactionCount',
     'presentEmployeeCount',
     'salaryCentavos',
+    'earnedSalaryCentavos',
+    'paidSalaryCentavos',
+    'unpaidSalaryCentavos',
     'mealCentavos',
   ];
   return Object.fromEntries(fields.map((field) => [field, sum(days.map((day) => day[field]))]));
@@ -371,4 +444,8 @@ function groupBy(rows, key) {
 
 function sum(values) {
   return values.reduce((total, value) => total + value, 0);
+}
+
+function ratioBasisPoints(amount, total) {
+  return total === 0 ? 0 : Math.round((amount * 10_000) / total);
 }

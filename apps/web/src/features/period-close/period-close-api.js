@@ -1,25 +1,25 @@
 import { apiRequest } from '../../lib/api-client.js';
 
-export function getPeriodClosePreview(start, end) {
+export function getSalaryPaymentPreview(start, end) {
   return apiRequest(
-    `/api/v1/period-close/preview?start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}`,
+    `/api/v1/salary-payments/preview?start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}`,
   );
 }
 
-export function getPeriodCloseHistory() {
-  return apiRequest('/api/v1/period-close/history');
+export function getSalaryPaymentHistory() {
+  return apiRequest('/api/v1/salary-payments/history');
 }
 
-export function closePeriod(values, csrfToken) {
-  return apiRequest('/api/v1/period-close/close', {
+export function paySalaries(values, csrfToken) {
+  return apiRequest('/api/v1/salary-payments/pay', {
     method: 'POST',
     headers: { 'x-csrf-token': csrfToken },
     body: JSON.stringify(values),
   });
 }
 
-export function reopenPeriod(id, reason, csrfToken) {
-  return apiRequest(`/api/v1/period-close/${id}/reopen`, {
+export function voidSalaryPayment(id, reason, csrfToken) {
+  return apiRequest(`/api/v1/salary-payments/${id}/void`, {
     method: 'POST',
     headers: { 'x-csrf-token': csrfToken },
     body: JSON.stringify({ reason }),

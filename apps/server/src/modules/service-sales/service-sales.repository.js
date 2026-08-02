@@ -37,6 +37,20 @@ export class ServiceSalesRepository {
     );
   }
 
+  isSalaryPaidDate(businessDate) {
+    return Boolean(
+      this.database
+        .prepare(
+          `SELECT 1
+           FROM period_close_days day
+           JOIN period_close_runs run ON run.id = day.period_close_run_id
+           WHERE day.business_date = ? AND run.status = 'CLOSED'
+           LIMIT 1`,
+        )
+        .get(businessDate),
+    );
+  }
+
   nextCustomerSequence(businessDate) {
     return this.database
       .prepare(

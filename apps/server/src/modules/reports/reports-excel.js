@@ -45,7 +45,7 @@ function addSummarySheet(workbook, report, generatedAt) {
   ];
 
   sheet.mergeCells('A1:C1');
-  sheet.getCell('A1').value = 'DD AUTO SPA · 30-DAY BUSINESS REPORT';
+  sheet.getCell('A1').value = 'DD AUTO SPA · BUSINESS REPORT';
   styleTitle(sheet.getCell('A1'));
   sheet.getRow(1).height = 31;
 
@@ -119,10 +119,10 @@ function addSummarySheet(workbook, report, generatedAt) {
       'Sales less product cost and outside labor',
     ],
     [
-      'Estimated net',
-      `'Daily Summary'!K${totalRow}`,
-      report.summary.estimatedNetCentavos,
-      'Gross profit less operating expenses',
+      'Operating profit',
+      `'Daily Summary'!E${totalRow}-'Daily Summary'!H${totalRow}`,
+      report.summary.operatingProfitCentavos,
+      'Total sales less operating expenses',
     ],
     [
       'Cash movement',
@@ -138,13 +138,13 @@ function addSummarySheet(workbook, report, generatedAt) {
     ],
     [
       'Staff meals',
-      `'Daily Summary'!R${totalRow}`,
+      `'Daily Summary'!T${totalRow}`,
       report.summary.mealCentavos,
       'Meals recorded for present employees',
     ],
   ];
 
-  sheet.getRow(7).values = ['Key metric', '30-day total', 'Definition'];
+  sheet.getRow(7).values = ['Key metric', 'Selected total', 'Definition'];
   styleHeader(sheet.getRow(7), 3);
   metrics.forEach(([label, formula, resultCentavos, note], index) => {
     const row = 8 + index;
@@ -152,7 +152,7 @@ function addSummarySheet(workbook, report, generatedAt) {
     sheet.getCell(row, 2).value = { formula, result: centavosToPesos(resultCentavos) };
     sheet.getCell(row, 2).numFmt = PESO_FORMAT;
     sheet.getCell(row, 3).value = note;
-    if (['Combined sales', 'Estimated net', 'Cash movement'].includes(label)) {
+    if (['Combined sales', 'Operating profit', 'Cash movement'].includes(label)) {
       styleRange(sheet.getRow(row), 3, {
         fill: solidFill(COLORS.paleBlue),
         font: { bold: true, color: { argb: COLORS.navy } },
@@ -182,20 +182,64 @@ function addSummarySheet(workbook, report, generatedAt) {
     sheet.getCell(row, 2).numFmt = COUNT_FORMAT;
   });
 
-  sheet.getCell('A28').value = 'Important';
-  sheet.getCell('A28').font = { bold: true, color: { argb: COLORS.navy } };
-  sheet.mergeCells('A29:C30');
-  sheet.getCell('A29').value =
-    'Voided records remain visible on the detail sheets for audit history, but their values are excluded from the Summary and Daily Summary totals.';
-  sheet.getCell('A29').alignment = { vertical: 'top', wrapText: true };
-  sheet.getCell('A29').fill = solidFill(COLORS.paleSlate);
-  sheet.getCell('A29').border = outlineBorder('CBD5E1');
-  sheet.getRow(29).height = 25;
-  sheet.getRow(30).height = 25;
-
-  styleBody(sheet, 3, 30, 3);
+  const finalRow = addReportBoardBreakdowns(sheet, report, 28);
+  styleBody(sheet, 3, finalRow, 3);
   sheet.pageSetup = { fitToPage: true, fitToWidth: 1, fitToHeight: 1, orientation: 'portrait' };
   sheet.headerFooter.oddFooter = '&LDD Auto Spa&CPage &P of &N&RConfidential owner report';
+}
+
+function addReportBoardBreakdowns(sheet, report, startRow) {
+  let row = startRow;
+  const addSection = (title, headings, values) => {
+    sheet.getCell(row, 1).value = title;
+    styleRange(sheet.getRow(row), 3, {
+      fill: solidFill(COLORS.navy),
+      font: { bold: true, color: { argb: COLORS.white } },
+    });
+    row += 1;
+    sheet.getRow(row).values = headings;
+    styleHeader(sheet.getRow(row), 3);
+    row += 1;
+    for (const value of values) {
+      sheet.getRow(row).values = value;
+      for (let column = 2; column <= value.length; column += 1) {
+        sheet.getCell(row, column).numFmt = PESO_FORMAT;
+      }
+      row += 1;
+    }
+    row += 1;
+  };
+
+  addSection(
+    `Income breakdown · ${report.reportBoard.totalServiced} service(s) completed`,
+    ['Income source', 'Amount'],
+    report.reportBoard.incomeBreakdown.map((entry) => [
+      entry.label,
+      centavosToPesos(entry.amountCentavos),
+    ]),
+  );
+  addSection(
+    'Operating expense breakdown',
+    ['Expense category', 'Amount'],
+    report.reportBoard.expenseBreakdown.map((entry) => [
+      entry.label,
+      centavosToPesos(entry.amountCentavos),
+    ]),
+  );
+  addSection(
+    'Earned salary breakdown',
+    ['Employee', 'Paid', 'Unpaid'],
+    report.reportBoard.employeeSalaryBreakdown.map((entry) => [
+      entry.employeeName,
+      centavosToPesos(entry.paidSalaryCentavos),
+      centavosToPesos(entry.unpaidSalaryCentavos),
+    ]),
+  );
+  sheet.getCell(row, 1).value = 'Voided records remain on detail sheets for audit history.';
+  sheet.mergeCells(row, 1, row, 3);
+  sheet.getCell(row, 1).alignment = { wrapText: true };
+  sheet.getCell(row, 1).fill = solidFill(COLORS.paleSlate);
+  return row;
 }
 
 function addDailySheet(workbook, breakdown, summary) {
@@ -220,14 +264,16 @@ function addDailySheet(workbook, breakdown, summary) {
     ['Tire Txns', 12],
     ['Canteen Txns', 15],
     ['Present Employees', 17],
-    ['Employee Salary', 18],
+    ['Earned Salary', 18],
+    ['Paid Salary', 18],
+    ['Unpaid Salary', 18],
     ['Staff Meals', 16],
-    ['Period Close Status', 20],
+    ['Salary Status', 18],
   ];
   sheet.columns = columns.map(([header, width]) => ({ header, width }));
   addSheetHeading(
     sheet,
-    '30-Day Daily Summary',
+    'Daily Summary',
     'One row per business date; zero-activity days are retained.',
   );
   sheet.getRow(3).values = columns.map(([header]) => header);
@@ -252,19 +298,21 @@ function addDailySheet(workbook, breakdown, summary) {
       day.tireTransactionCount,
       day.canteenTransactionCount,
       day.presentEmployeeCount,
-      centavosToPesos(day.salaryCentavos),
+      centavosToPesos(day.earnedSalaryCentavos),
+      centavosToPesos(day.paidSalaryCentavos),
+      centavosToPesos(day.unpaidSalaryCentavos),
       centavosToPesos(day.mealCentavos),
-      day.periodCloseStatus,
+      day.salaryPaymentStatus,
     ];
     row.getCell(1).numFmt = 'mmm d, yyyy';
     for (let column = 2; column <= 12; column += 1) row.getCell(column).numFmt = PESO_FORMAT;
     for (let column = 13; column <= 16; column += 1) row.getCell(column).numFmt = COUNT_FORMAT;
-    for (let column = 17; column <= 18; column += 1) row.getCell(column).numFmt = PESO_FORMAT;
+    for (let column = 17; column <= 20; column += 1) row.getCell(column).numFmt = PESO_FORMAT;
     if (!day.hasActivity) row.font = { color: { argb: '94A3B8' } };
   });
 
   const totalRow = breakdown.length + 4;
-  sheet.getCell(totalRow, 1).value = '30-DAY TOTAL';
+  sheet.getCell(totalRow, 1).value = 'SELECTED TOTAL';
   const summaryFields = [
     'serviceSalesCentavos',
     'tireSalesCentavos',
@@ -281,10 +329,12 @@ function addDailySheet(workbook, breakdown, summary) {
     'tireTransactionCount',
     'canteenTransactionCount',
     'presentEmployeeCount',
-    'salaryCentavos',
+    'earnedSalaryCentavos',
+    'paidSalaryCentavos',
+    'unpaidSalaryCentavos',
     'mealCentavos',
   ];
-  for (let column = 2; column <= 18; column += 1) {
+  for (let column = 2; column <= 20; column += 1) {
     const letter = sheet.getColumn(column).letter;
     const rawResult = summary[summaryFields[column - 2]];
     sheet.getCell(totalRow, column).value = {
@@ -294,13 +344,13 @@ function addDailySheet(workbook, breakdown, summary) {
     sheet.getCell(totalRow, column).numFmt =
       column <= 12 || column >= 17 ? PESO_FORMAT : COUNT_FORMAT;
   }
-  sheet.getCell(totalRow, 19).value = 'See daily rows';
+  sheet.getCell(totalRow, 21).value = 'See daily rows';
   styleRange(sheet.getRow(totalRow), columns.length, {
     fill: solidFill(COLORS.navy),
     font: { bold: true, color: { argb: COLORS.white } },
   });
-  sheet.autoFilter = { from: 'A3', to: `S${Math.max(3, totalRow - 1)}` };
-  styleBody(sheet, 4, totalRow - 1, 19);
+  sheet.autoFilter = { from: 'A3', to: `U${Math.max(3, totalRow - 1)}` };
+  styleBody(sheet, 4, totalRow - 1, 21);
   sheet.pageSetup = { fitToPage: true, fitToWidth: 1, fitToHeight: 0, orientation: 'landscape' };
 }
 
@@ -320,7 +370,7 @@ function addSalesSheet(workbook, name, transactions) {
     ['Void reason', 32],
   ];
   sheet.columns = columns.map(([header, width]) => ({ header, width }));
-  addSheetHeading(sheet, name, 'Individual records in the selected 30-day period.');
+  addSheetHeading(sheet, name, 'Individual records in the selected period.');
   sheet.getRow(3).values = columns.map(([header]) => header);
   styleHeader(sheet.getRow(3), columns.length);
 

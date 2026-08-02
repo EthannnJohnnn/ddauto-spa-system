@@ -3,6 +3,7 @@ import { formatPeso } from '../catalogs/catalog-formatters.js';
 import { ReasonDialog } from '../catalogs/ReasonDialog.jsx';
 import { setCanteenDocumentActive } from '../canteen-inventory/canteen-inventory-api.js';
 import { setTireDocumentActive } from '../tire-inventory/tire-inventory-api.js';
+import { useEditNavigation } from '../../hooks/useEditNavigation.js';
 import { ExpenseCategoriesPanel } from './ExpenseCategoriesPanel.jsx';
 import { ExpenseForm } from './ExpenseForm.jsx';
 import { ExpenseHistory } from './ExpenseHistory.jsx';
@@ -33,6 +34,7 @@ export function PurchasesExpensesPage({ csrfToken, onNavigate }) {
   const [overview, setOverview] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const editRegionRef = useEditNavigation(editingExpense);
   const period = useMemo(() => periodRange(periodMode, anchorDate), [periodMode, anchorDate]);
 
   const load = useCallback(async () => {
@@ -193,11 +195,9 @@ export function PurchasesExpensesPage({ csrfToken, onNavigate }) {
           />
         )}
         {activeTab === 'expenses' && (
-          <div>
-            <div className="mb-5 rounded-2xl border border-blue-200 bg-blue-50 px-5 py-4 text-sm leading-6 text-blue-900">
-              Expenses recorded with this form are manual. Finalized Salary and Staff Meal entries
-              are generated and protected by the payroll workflow so amounts are never counted
-              twice.
+          <div className="scroll-mt-28" ref={editRegionRef}>
+            <div className="mb-5 rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 text-sm text-blue-900">
+              Salary and meal expenses are added automatically when paid.
             </div>
             <div className="grid gap-6 xl:grid-cols-[24rem_minmax(0,1fr)]">
               <ExpenseForm

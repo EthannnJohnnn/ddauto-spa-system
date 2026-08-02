@@ -19,13 +19,14 @@ export class PeriodCloseService {
 
   preview({ start, end }) {
     this.validateRange(start, end);
-    this.assertNoOverlap(start, end);
     const report = this.reportsService.getOverview({ start, end });
     const financialByDate = new Map(report.dailyBreakdown.map((day) => [day.businessDate, day]));
     const days = dateRange(start, end).map((businessDate) => {
       const workforce = this.attendanceService.getDay(businessDate);
       const financial = financialByDate.get(businessDate) ?? emptyFinancialDay(businessDate);
       const payrollCost = workforce.salaryCentavos + workforce.mealCentavos;
+      const alreadyPaid = workforce.status === 'PAID';
+      const paymentEligible = !alreadyPaid && payrollCost > 0;
       return {
         ...financial,
         presentEmployeeCount: workforce.presentEmployeeCount,
@@ -34,39 +35,49 @@ export class PeriodCloseService {
         employees: workforce.employees,
         reviewed: workforce.reviewed,
         requiresReview: workforce.requiresReview,
+        paymentStatus: alreadyPaid ? 'PAID' : paymentEligible ? 'UNPAID' : 'NONE',
+        alreadyPaid,
+        paymentEligible,
         hasActivity: financial.hasActivity || workforce.requiresReview,
-        expenseCentavos: financial.expenseCentavos + payrollCost,
-        estimatedNetCentavos: financial.estimatedNetCentavos - payrollCost,
-        cashMovementCentavos: financial.cashMovementCentavos - payrollCost,
+        expenseAfterPaymentCentavos:
+          financial.expenseCentavos + (paymentEligible ? payrollCost : 0),
       };
     });
     const activeDays = days.filter((day) => day.hasActivity);
     if (activeDays.length === 0) {
       throw new AppError(
         409,
-        'PERIOD_CLOSE_NO_ACTIVITY',
+        'SALARY_PAYMENT_NO_ACTIVITY',
         'The selected period has no activity or attendance.',
       );
     }
     const unreviewedDates = activeDays
-      .filter((day) => day.requiresReview && !day.reviewed)
+      .filter((day) => !day.alreadyPaid && day.requiresReview && !day.reviewed)
       .map((day) => day.businessDate);
-    const employeeTotals = aggregateEmployees(days);
+    const payableDays = days.filter((day) => day.paymentEligible);
+    const employeeTotals = aggregateEmployees(payableDays);
+    const pendingSalaryCentavos = sum(payableDays.map((day) => day.salaryCentavos));
+    const pendingMealCentavos = sum(payableDays.map((day) => day.mealCentavos));
+    const expenseAfterPaymentCentavos =
+      report.summary.expenseCentavos + pendingSalaryCentavos + pendingMealCentavos;
 
     return {
       period: { start, end, dayCount: days.length },
-      canClose: unreviewedDates.length === 0,
+      canPay: unreviewedDates.length === 0 && payableDays.length > 0,
       unreviewedDates,
       summary: {
         ...report.summary,
-        expenseCentavos: sum(days.map((day) => day.expenseCentavos)),
-        estimatedNetCentavos: sum(days.map((day) => day.estimatedNetCentavos)),
-        cashMovementCentavos: sum(days.map((day) => day.cashMovementCentavos)),
-        totalSalaryCentavos: sum(days.map((day) => day.salaryCentavos)),
-        totalMealCentavos: sum(days.map((day) => day.mealCentavos)),
-        presentEmployeeDays: sum(days.map((day) => day.presentEmployeeCount)),
+        currentExpenseCentavos: report.summary.expenseCentavos,
+        expenseAfterPaymentCentavos,
+        operatingProfitAfterPaymentCentavos:
+          report.summary.totalSalesCentavos - expenseAfterPaymentCentavos,
+        totalSalaryCentavos: pendingSalaryCentavos,
+        totalMealCentavos: pendingMealCentavos,
+        presentEmployeeDays: sum(payableDays.map((day) => day.presentEmployeeCount)),
       },
       employeeTotals,
+      payableDayCount: payableDays.length,
+      alreadyPaidDayCount: days.filter((day) => day.alreadyPaid).length,
       days,
     };
   }
@@ -81,13 +92,20 @@ export class PeriodCloseService {
     };
   }
 
-  close(input, actorUserId) {
+  pay(input, actorUserId) {
     const preview = this.preview(input);
-    if (!preview.canClose) {
+    if (preview.unreviewedDates.length > 0) {
       throw new AppError(
         409,
-        'PERIOD_CLOSE_REVIEW_REQUIRED',
+        'SALARY_PAYMENT_REVIEW_REQUIRED',
         `Review attendance for: ${preview.unreviewedDates.join(', ')}.`,
+      );
+    }
+    if (preview.payableDayCount === 0) {
+      throw new AppError(
+        409,
+        'SALARY_PAYMENT_NOTHING_DUE',
+        'The selected range has no reviewed unpaid salary or meals.',
       );
     }
     const salaryCategory = this.requireSystemCategory('PAYROLL');
@@ -95,19 +113,30 @@ export class PeriodCloseService {
     const now = this.clock().toISOString();
     let runId;
     this.repository.transaction(() => {
-      this.assertNoOverlap(input.start, input.end);
       runId = this.repository.createRun({
         ...input,
+        closeNote: input.note,
         totalSalesCentavos: preview.summary.totalSalesCentavos,
         totalPurchaseCentavos: preview.summary.purchaseCentavos,
-        totalExpenseCentavos: preview.summary.expenseCentavos,
+        totalExpenseCentavos: preview.summary.expenseAfterPaymentCentavos,
         totalSalaryCentavos: preview.summary.totalSalaryCentavos,
         totalMealCentavos: preview.summary.totalMealCentavos,
-        estimatedNetCentavos: preview.summary.estimatedNetCentavos,
+        estimatedNetCentavos: preview.summary.operatingProfitAfterPaymentCentavos,
         actorUserId,
         now,
       });
-      for (const day of preview.days) {
+      for (const day of preview.days.filter((entry) => entry.paymentEligible)) {
+        if (this.repository.findActiveForDate(day.businessDate)) {
+          throw new AppError(
+            409,
+            'SALARY_PAYMENT_DATE_ALREADY_PAID',
+            `${day.businessDate} was paid by another salary payment. Refresh the preview.`,
+          );
+        }
+        day.expenseCentavos = day.expenseAfterPaymentCentavos;
+        day.estimatedNetCentavos = day.totalSalesCentavos - day.expenseCentavos;
+        day.cashMovementCentavos =
+          day.totalSalesCentavos - day.purchaseCentavos - day.expenseCentavos;
         this.repository.createDay(runId, day);
         for (const employee of day.employees) {
           this.repository.createEmployeeDay(runId, { ...employee, businessDate: day.businessDate });
@@ -118,9 +147,9 @@ export class PeriodCloseService {
             businessDate: day.businessDate,
             categoryId: salaryCategory.id,
             categoryName: salaryCategory.name,
-            description: 'Period Close employee payroll',
+            description: 'Employee salary payment',
             amountCentavos: day.salaryCentavos,
-            notes: input.closeNote,
+            notes: input.note,
             sourceType: 'PAYROLL',
             actorUserId,
             now,
@@ -132,9 +161,9 @@ export class PeriodCloseService {
             businessDate: day.businessDate,
             categoryId: mealCategory.id,
             categoryName: mealCategory.name,
-            description: 'Period Close staff meals',
+            description: 'Staff meals paid with salary',
             amountCentavos: day.mealCentavos,
-            notes: input.closeNote,
+            notes: input.note,
             sourceType: 'STAFF_MEAL',
             actorUserId,
             now,
@@ -143,8 +172,8 @@ export class PeriodCloseService {
       }
       this.auditRepository.record({
         actorUserId,
-        action: 'PERIOD_CLOSE_COMPLETED',
-        entityType: 'PERIOD_CLOSE_RUN',
+        action: 'SALARY_PAYMENT_COMPLETED',
+        entityType: 'SALARY_PAYMENT',
         entityId: String(runId),
         metadata: {
           start: input.start,
@@ -152,7 +181,7 @@ export class PeriodCloseService {
           employeeCount: preview.employeeTotals.length,
           totalSalaryCentavos: preview.summary.totalSalaryCentavos,
           totalMealCentavos: preview.summary.totalMealCentavos,
-          closeNote: input.closeNote,
+          note: input.note,
         },
         now,
       });
@@ -160,23 +189,25 @@ export class PeriodCloseService {
     return this.history().periods.find((run) => run.id === runId);
   }
 
-  reopen(id, reason, actorUserId) {
+  void(id, reason, actorUserId) {
     const run = this.repository.findRun(id);
-    if (!run) throw new AppError(404, 'PERIOD_CLOSE_NOT_FOUND', 'The Period Close was not found.');
+    if (!run) {
+      throw new AppError(404, 'SALARY_PAYMENT_NOT_FOUND', 'The salary payment was not found.');
+    }
     if (run.status !== 'CLOSED') {
       throw new AppError(
         409,
-        'PERIOD_CLOSE_ALREADY_REOPENED',
-        'This Period Close is already reopened.',
+        'SALARY_PAYMENT_ALREADY_VOIDED',
+        'This salary payment is already voided.',
       );
     }
     const now = this.clock().toISOString();
     this.repository.transaction(() => {
-      this.repository.reopenRun(run.id, reason, actorUserId, now, run.start_date, run.end_date);
+      this.repository.reopenRun(run.id, reason, actorUserId, now);
       this.auditRepository.record({
         actorUserId,
-        action: 'PERIOD_CLOSE_REOPENED',
-        entityType: 'PERIOD_CLOSE_RUN',
+        action: 'SALARY_PAYMENT_VOIDED',
+        entityType: 'SALARY_PAYMENT',
         entityId: String(run.id),
         metadata: { start: run.start_date, end: run.end_date, reason },
         now,
@@ -190,36 +221,22 @@ export class PeriodCloseService {
     if (start > end || dates.length === 0) {
       throw new AppError(
         400,
-        'PERIOD_CLOSE_INVALID_RANGE',
+        'SALARY_PAYMENT_INVALID_RANGE',
         'Start date must be on or before end date.',
       );
     }
     if (dates.length > MAX_PERIOD_DAYS) {
       throw new AppError(
         400,
-        'PERIOD_CLOSE_TOO_LONG',
-        'A Period Close can include at most 31 days.',
+        'SALARY_PAYMENT_TOO_LONG',
+        'A salary payment can include at most 31 days.',
       );
     }
     if (end > localDate(this.clock())) {
-      throw new AppError(400, 'PERIOD_CLOSE_FUTURE_DATE', 'The end date cannot be in the future.');
-    }
-  }
-
-  assertNoOverlap(start, end) {
-    if (this.repository.findActiveOverlap(start, end)) {
       throw new AppError(
-        409,
-        'PERIOD_CLOSE_OVERLAP',
-        'The selected dates overlap an active Period Close.',
-      );
-    }
-    const legacy = this.repository.findLegacyOverlap(start, end);
-    if (legacy) {
-      throw new AppError(
-        409,
-        'PERIOD_CLOSE_LEGACY_OVERLAP',
-        `${legacy.business_date} is still closed in legacy ${legacy.legacy_type.toLowerCase().replace('_', ' ')} history.`,
+        400,
+        'SALARY_PAYMENT_FUTURE_DATE',
+        'The end date cannot be in the future.',
       );
     }
   }
@@ -229,7 +246,7 @@ export class PeriodCloseService {
     if (!category) {
       throw new AppError(
         500,
-        'PERIOD_CLOSE_CATEGORY_MISSING',
+        'SALARY_PAYMENT_CATEGORY_MISSING',
         `The ${systemCode} expense category is missing.`,
       );
     }
@@ -266,17 +283,17 @@ function mapRun(run, days, employeeDays) {
     id: run.id,
     start: run.start_date,
     end: run.end_date,
-    status: run.status,
+    status: run.status === 'CLOSED' ? 'PAID' : 'VOIDED',
     totalSalesCentavos: run.total_sales_centavos,
     totalPurchaseCentavos: run.total_purchase_centavos,
     totalExpenseCentavos: run.total_expense_centavos,
     totalSalaryCentavos: run.total_salary_centavos,
     totalMealCentavos: run.total_meal_centavos,
     estimatedNetCentavos: run.estimated_net_centavos,
-    closeNote: run.close_note,
-    reopenReason: run.reopen_reason,
-    closedAt: run.closed_at,
-    reopenedAt: run.reopened_at,
+    note: run.close_note,
+    voidReason: run.reopen_reason,
+    paidAt: run.closed_at,
+    voidedAt: run.reopened_at,
     employeeTotals: aggregateSnapshotEmployees(runEmployees),
     days: runDays.map((day) => ({
       ...day,

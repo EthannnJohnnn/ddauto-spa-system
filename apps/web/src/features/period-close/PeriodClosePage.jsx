@@ -2,20 +2,20 @@ import { useCallback, useEffect, useState } from 'react';
 import { formatPeso } from '../catalogs/catalog-formatters.js';
 import { ReasonDialog } from '../catalogs/ReasonDialog.jsx';
 import {
-  closePeriod,
-  getPeriodCloseHistory,
-  getPeriodClosePreview,
-  reopenPeriod,
+  getSalaryPaymentHistory,
+  getSalaryPaymentPreview,
+  paySalaries,
+  voidSalaryPayment,
 } from './period-close-api.js';
 
-export function PeriodClosePage({ csrfToken, onNavigate }) {
+export function SalaryPaymentsPage({ csrfToken, onNavigate }) {
   const today = todayLocal();
   const [start, setStart] = useState(today);
   const [end, setEnd] = useState(today);
   const [preview, setPreview] = useState(null);
   const [history, setHistory] = useState({ periods: [], legacyDailyCloses: [] });
-  const [closeNote, setCloseNote] = useState('');
-  const [reopenTarget, setReopenTarget] = useState(null);
+  const [note, setNote] = useState('');
+  const [voidTarget, setVoidTarget] = useState(null);
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -24,10 +24,10 @@ export function PeriodClosePage({ csrfToken, onNavigate }) {
     setLoading(true);
     setError('');
     try {
-      const historyData = await getPeriodCloseHistory();
+      const historyData = await getSalaryPaymentHistory();
       setHistory(historyData);
       try {
-        setPreview(await getPeriodClosePreview(start, end));
+        setPreview(await getSalaryPaymentPreview(start, end));
       } catch (previewError) {
         setPreview(null);
         setError(previewError.message);
@@ -43,31 +43,31 @@ export function PeriodClosePage({ csrfToken, onNavigate }) {
     load();
   }, [load]);
 
-  async function handleClose() {
+  async function handlePay() {
     setBusy(true);
     setError('');
     try {
-      await closePeriod({ start, end, closeNote: closeNote.trim() }, csrfToken);
-      setCloseNote('');
+      await paySalaries({ start, end, note: note.trim() }, csrfToken);
+      setNote('');
       await load();
-    } catch (closeError) {
-      setError(closeError.message);
+    } catch (paymentError) {
+      setError(paymentError.message);
     } finally {
       setBusy(false);
     }
   }
 
-  async function handleReopen(reason) {
-    await reopenPeriod(reopenTarget.id, reason, csrfToken);
-    setReopenTarget(null);
+  async function handleVoid(reason) {
+    await voidSalaryPayment(voidTarget.id, reason, csrfToken);
+    setVoidTarget(null);
     await load();
   }
 
   return (
     <div className="mx-auto max-w-7xl space-y-6">
       <header>
-        <p className="text-sm font-semibold text-blue-600">Finalize</p>
-        <h2 className="ui-page-heading mt-1">Period Close</h2>
+        <p className="text-sm font-semibold text-blue-600">Payroll</p>
+        <h2 className="ui-page-heading mt-1">Salary Payments</h2>
       </header>
 
       <section className="rounded-2xl border border-blue-100 bg-white p-5 shadow-sm">
@@ -93,11 +93,17 @@ export function PeriodClosePage({ csrfToken, onNavigate }) {
 
       {preview && (
         <>
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+          <div className="grid grid-cols-2 gap-3 xl:grid-cols-5">
             <SummaryCard label="Sales" value={formatPeso(preview.summary.totalSalesCentavos)} />
             <SummaryCard label="Purchases" value={formatPeso(preview.summary.purchaseCentavos)} />
-            <SummaryCard label="Expenses" value={formatPeso(preview.summary.expenseCentavos)} />
-            <SummaryCard label="Salary" value={formatPeso(preview.summary.totalSalaryCentavos)} />
+            <SummaryCard
+              label="Expenses after payment"
+              value={formatPeso(preview.summary.expenseAfterPaymentCentavos)}
+            />
+            <SummaryCard
+              label="Salary due"
+              value={formatPeso(preview.summary.totalSalaryCentavos)}
+            />
             <SummaryCard label="Meals" value={formatPeso(preview.summary.totalMealCentavos)} />
           </div>
 
@@ -107,14 +113,14 @@ export function PeriodClosePage({ csrfToken, onNavigate }) {
               <EmployeeTotals employees={preview.employeeTotals} />
               <section className="rounded-2xl border border-blue-100 bg-white p-5 shadow-sm">
                 <div className="flex items-center justify-between gap-3">
-                  <h3 className="font-bold">Ready to close</h3>
+                  <h3 className="font-bold">Payment</h3>
                   <span
-                    className={`rounded-full px-2.5 py-1 text-xs font-bold ${preview.canClose ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}`}
+                    className={`rounded-full px-2.5 py-1 text-xs font-bold ${preview.canPay ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}`}
                   >
-                    {preview.canClose ? 'Ready' : 'Review needed'}
+                    {preview.canPay ? 'Ready' : 'Not ready'}
                   </span>
                 </div>
-                {!preview.canClose && (
+                {preview.unreviewedDates.length > 0 && (
                   <div className="mt-4 rounded-xl bg-amber-50 p-4 text-sm text-amber-900">
                     <p>{preview.unreviewedDates.length} day(s) still need review.</p>
                     <button
@@ -133,17 +139,17 @@ export function PeriodClosePage({ csrfToken, onNavigate }) {
                   <textarea
                     className="mt-3 min-h-20 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500"
                     maxLength="500"
-                    onChange={(event) => setCloseNote(event.target.value)}
-                    value={closeNote}
+                    onChange={(event) => setNote(event.target.value)}
+                    value={note}
                   />
                 </details>
                 <button
                   className="mt-4 w-full rounded-xl bg-blue-600 px-4 py-3 font-bold text-white disabled:opacity-50"
-                  disabled={busy || !preview.canClose}
-                  onClick={handleClose}
+                  disabled={busy || !preview.canPay}
+                  onClick={handlePay}
                   type="button"
                 >
-                  {busy ? 'Closing…' : `Close ${preview.period.dayCount} day(s)`}
+                  {busy ? 'Paying…' : `Pay ${preview.payableDayCount} day(s)`}
                 </button>
               </section>
             </div>
@@ -151,17 +157,17 @@ export function PeriodClosePage({ csrfToken, onNavigate }) {
         </>
       )}
 
-      <PeriodHistory history={history} onReopen={setReopenTarget} />
+      <PaymentHistory history={history} onVoid={setVoidTarget} />
       <ReasonDialog
-        onCancel={() => setReopenTarget(null)}
-        onConfirm={handleReopen}
+        onCancel={() => setVoidTarget(null)}
+        onConfirm={handleVoid}
         target={
-          reopenTarget
+          voidTarget
             ? {
-                ...reopenTarget,
+                ...voidTarget,
                 isActive: true,
-                activeVerb: 'Reopen',
-                label: `${reopenTarget.start} to ${reopenTarget.end}`,
+                activeVerb: 'Void payment',
+                label: `${voidTarget.start} to ${voidTarget.end}`,
               }
             : null
         }
@@ -177,7 +183,7 @@ function DailyBreakdown({ days }) {
         <h3 className="font-bold">Daily breakdown</h3>
       </div>
       <div
-        aria-label="Period Close daily breakdown"
+        aria-label="Salary payment daily breakdown"
         className="ui-scroll-list divide-y divide-slate-100"
         role="region"
         tabIndex="0"
@@ -189,11 +195,13 @@ function DailyBreakdown({ days }) {
                 <strong>{day.businessDate}</strong>
                 <p className="mt-1 text-xs text-slate-500">
                   {day.presentEmployeeCount} present ·{' '}
-                  {day.reviewed
-                    ? 'Reviewed'
-                    : day.requiresReview
-                      ? 'Needs review'
-                      : 'No review needed'}
+                  {day.alreadyPaid
+                    ? 'Paid'
+                    : day.reviewed
+                      ? 'Reviewed'
+                      : day.requiresReview
+                        ? 'Needs review'
+                        : 'No review needed'}
                 </p>
               </div>
               <div className="text-right">
@@ -206,7 +214,7 @@ function DailyBreakdown({ days }) {
               <Metric label="Tires" value={day.tireSalesCentavos} />
               <Metric label="Canteen" value={day.canteenSalesCentavos} />
               <Metric label="Purchases" value={day.purchaseCentavos} />
-              <Metric label="Expenses incl. payroll" value={day.expenseCentavos} />
+              <Metric label="Expenses after payment" value={day.expenseAfterPaymentCentavos} />
               <Metric label="Meals" value={day.mealCentavos} />
             </dl>
           </details>
@@ -234,17 +242,17 @@ function EmployeeTotals({ employees }) {
   );
 }
 
-function PeriodHistory({ history, onReopen }) {
+function PaymentHistory({ history, onVoid }) {
   return (
     <section className="overflow-hidden rounded-2xl border border-blue-100 bg-white shadow-sm">
       <div className="border-b border-blue-100 px-5 py-4">
-        <h3 className="font-bold">Period history</h3>
+        <h3 className="font-bold">Payment history</h3>
       </div>
       {history.periods.length === 0 && history.legacyDailyCloses.length === 0 ? (
-        <p className="p-6 text-sm text-slate-500">No closed periods yet.</p>
+        <p className="p-6 text-sm text-slate-500">No salary payments yet.</p>
       ) : (
         <div
-          aria-label="Period Close history list"
+          aria-label="Salary payment history list"
           className="ui-scroll-list divide-y divide-slate-100"
           role="region"
           tabIndex="0"
@@ -265,13 +273,13 @@ function PeriodHistory({ history, onReopen }) {
                   <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold">
                     {run.status}
                   </span>
-                  {run.status === 'CLOSED' && (
+                  {run.status === 'PAID' && (
                     <button
                       className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-bold text-amber-800"
-                      onClick={() => onReopen(run)}
+                      onClick={() => onVoid(run)}
                       type="button"
                     >
-                      Reopen
+                      Void payment
                     </button>
                   )}
                 </div>
@@ -305,7 +313,7 @@ function DateInput({ label, onChange, ...props }) {
 }
 function SummaryCard({ label, value }) {
   return (
-    <article className="rounded-2xl border border-blue-100 bg-white p-5 shadow-sm">
+    <article className="rounded-2xl border border-blue-100 bg-white p-4 shadow-sm sm:p-5">
       <p className="text-sm text-slate-500">{label}</p>
       <p className="mt-2 text-xl font-bold text-blue-950">{value}</p>
     </article>

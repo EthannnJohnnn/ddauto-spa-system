@@ -6,7 +6,7 @@ import { openDatabase } from '../../db/database.js';
 const OWNER = {
   username: 'owner',
   displayName: 'Owner',
-  password: 'SecureOwner123',
+  password: 'owner123',
 };
 const BUSINESS_DATE = '2026-07-21';
 

@@ -74,8 +74,8 @@ export class AttendanceService {
     if (close) {
       throw new AppError(
         409,
-        'ATTENDANCE_DATE_CLOSED',
-        'Reopen the period before reviewing this date.',
+        'ATTENDANCE_DATE_PAID',
+        'Void the salary payment before reviewing this date again.',
       );
     }
     const day = this.getDay(input.businessDate);

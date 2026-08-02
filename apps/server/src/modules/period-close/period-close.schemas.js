@@ -13,7 +13,7 @@ export const periodCloseInputSchema = z
   .object({
     start: businessDate,
     end: businessDate,
-    closeNote: z.string().trim().max(500).default(''),
+    note: z.string().trim().max(500).default(''),
   })
   .strict();
 
@@ -21,7 +21,7 @@ export const periodCloseIdParamsSchema = z
   .object({ id: z.coerce.number().int().positive() })
   .strict();
 
-export const periodCloseReopenSchema = z
+export const periodCloseVoidSchema = z
   .object({ reason: z.string().trim().max(200).default('') })
   .strict();
 

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { formatPeso } from '../catalogs/catalog-formatters.js';
 import { ReasonDialog } from '../catalogs/ReasonDialog.jsx';
+import { useEditNavigation } from '../../hooks/useEditNavigation.js';
 import { TireDocumentForm } from './TireDocumentForm.jsx';
 import { TireDocumentHistory } from './TireDocumentHistory.jsx';
 import { TireProductsPanel } from './TireProductsPanel.jsx';
@@ -37,6 +38,7 @@ export function TireInventoryPage({ csrfToken }) {
   const [overview, setOverview] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const editRegionRef = useEditNavigation(editingDocument);
   const period = useMemo(() => periodRange(periodMode, anchorDate), [periodMode, anchorDate]);
 
   const load = useCallback(async () => {
@@ -185,7 +187,7 @@ export function TireInventoryPage({ csrfToken }) {
         </div>
       </div>
 
-      <div className="mt-6">
+      <div className="mt-6 scroll-mt-28" ref={editRegionRef}>
         {activeTab === 'inventory' && (
           <TireProductsPanel
             businessDate={anchorDate}

@@ -7,7 +7,7 @@ import { hashPassword } from '../auth/auth.crypto.js';
 const OWNER = {
   username: 'owner',
   displayName: 'Owner',
-  password: 'SecureOwner123',
+  password: 'owner123',
 };
 const BUSINESS_DATE = '2026-07-19';
 
@@ -204,7 +204,7 @@ describe('service sales API', () => {
 
   it('allows staff to read the daily board but blocks service-sale mutations', async () => {
     await createOwnerAgent(app);
-    const password = 'SecureStaff123';
+    const password = 'staff123';
     const passwordRecord = await hashPassword(password);
     const now = new Date().toISOString();
     database

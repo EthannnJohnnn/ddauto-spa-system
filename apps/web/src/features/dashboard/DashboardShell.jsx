@@ -10,7 +10,7 @@ import { PurchasesExpensesPage } from '../purchases-expenses/PurchasesExpensesPa
 import { ReportsPage } from '../reports/ReportsPage.jsx';
 import { getReportsOverview } from '../reports/reports-api.js';
 import { AttendancePayrollPage } from '../attendance-payroll/AttendancePayrollPage.jsx';
-import { PeriodClosePage } from '../period-close/PeriodClosePage.jsx';
+import { SalaryPaymentsPage } from '../period-close/PeriodClosePage.jsx';
 import { EquipmentPage } from '../equipment/EquipmentPage.jsx';
 import { DashboardNotes } from './DashboardNotes.jsx';
 
@@ -31,7 +31,7 @@ const navigation = [
     items: [
       { name: 'Attendance', icon: 'payroll' },
       { name: 'Reports', icon: 'reports' },
-      { name: 'Period Close', icon: 'close' },
+      { name: 'Salary Payments', icon: 'close' },
       { name: 'Settings', icon: 'settings' },
     ],
   },
@@ -187,8 +187,8 @@ export function DashboardShell({ user, csrfToken, onLogout }) {
             <AttendancePayrollPage csrfToken={csrfToken} />
           ) : activeModule === 'Reports' ? (
             <ReportsPage />
-          ) : activeModule === 'Period Close' ? (
-            <PeriodClosePage csrfToken={csrfToken} onNavigate={setActiveModule} />
+          ) : activeModule === 'Salary Payments' ? (
+            <SalaryPaymentsPage csrfToken={csrfToken} onNavigate={setActiveModule} />
           ) : activeModule === 'Settings' ? (
             <CatalogSettings csrfToken={csrfToken} />
           ) : (
